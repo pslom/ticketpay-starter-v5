@@ -1,14 +1,1 @@
-{
-  "items": [
-    {
-      "plate": "7abc123",
-      "state": "ca",
-      "citation_number": "SF-LOCAL-1001",
-      "amount_cents": 7500,
-      "issued_at": "2025-08-12T17:00:00Z",
-      "location": "Valencia & 20th",
-      "violation": "Expired Meter",
-      "city": "SF"
-    }
-  ]
-}
+{"items":[{"plate":"7abc123","state":"ca","citation_number":"SF-12345","amount_cents":6500,"issued_at":"2025-08-10T12:00:00Z","location":"Mission & 16th","violation":"No Parking","city":"SF"}]}
