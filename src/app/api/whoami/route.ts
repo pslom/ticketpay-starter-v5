@@ -1,4 +1,13 @@
-export async function GET() {
+import { NextRequest } from "next/server";
+import { corsHeaders } from "@/lib/cors";
+
+export async function OPTIONS(req: NextRequest) {
+  const origin = req.headers.get("origin") || undefined;
+  return new Response(null, { status: 204, headers: corsHeaders(origin) });
+}
+
+export async function GET(req: NextRequest) {
+  const origin = req.headers.get("origin") || undefined;
   return new Response(
     JSON.stringify({
       ok: true,
@@ -6,6 +15,6 @@ export async function GET() {
       cwd: process.cwd(),
       env: process.env.NODE_ENV || "development",
     }),
-    { headers: { "content-type": "application/json" } }
+    { headers: { "content-type": "application/json", ...corsHeaders(origin) } }
   );
 }
