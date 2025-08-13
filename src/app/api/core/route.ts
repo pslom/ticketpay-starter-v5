@@ -19,6 +19,7 @@ export async function OPTIONS(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const origin = req.headers.get("origin") || undefined;
   const pool = getPool();
+
   try {
     const body = await req.json();
     const op = String(body?.op || '').trim();
@@ -78,11 +79,11 @@ export async function POST(req: NextRequest) {
       if (!parsed.success) return Response.json({ ok:false, error:'invalid_input' }, { status:400, headers: corsHeaders(origin) });
       const { subscription_id } = parsed.data;
       const result = await pool.query("DELETE FROM subscriptions WHERE id = $1", [subscription_id]);
-      return Response.json({ ok:true, deleted: result.rowCount }, { headers: corsHeaders(origin) });
+      return Response.json({ ok:true, deleted: result.rowCount ?? 0 }, { headers: corsHeaders(origin) });
     }
 
     return Response.json({ ok:false, error:'unknown_op' }, { status:400, headers: corsHeaders(origin) });
-  } catch (e) {
+  } catch {
     return Response.json({ ok:false, error:'server_error' }, { status:500, headers: corsHeaders(origin) });
   }
 }

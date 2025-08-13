@@ -43,7 +43,8 @@ export async function POST(req: NextRequest) {
       [cityUse, it.plate, plateNorm, stateNorm, it.citation_number, it.amount_cents, it.issued_at, it.location || null, it.violation || null]
     );
 
-    if (res.rowCount > 0) inserted++;
+    const count = (res.rowCount ?? 0); // pg types: number | null
+    if (count > 0) inserted++;
   }
 
   return Response.json({ ok:true, inserted });
