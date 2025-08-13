@@ -10,10 +10,12 @@
     "db:push": "node ./scripts/db-init.js"
   },
   "dependencies": {
+    "@sendgrid/mail": "^8.1.5",
     "next": "15.4.6",
     "pg": "^8.16.3",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "twilio": "^5.8.0",
     "zod": "^4.0.17"
   },
   "devDependencies": {
