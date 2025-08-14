@@ -1,17 +1,21 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 
-export default function UnsubPage({ params }: { params: { id: string } }) {
+export default function UnsubPage() {
+  const params = useParams<{ id: string | string[] }>();
+  const id = Array.isArray(params.id) ? params.id[0] : params.id;
   const [state, setState] = useState<'idle'|'ok'|'err'>('idle');
   const [detail, setDetail] = useState<string>('');
 
   useEffect(() => {
+    if (!id) return;
     const run = async () => {
       try {
         const r = await fetch('/api/core', {
           method: 'POST',
           headers: { 'content-type':'application/json' },
-          body: JSON.stringify({ op:'unsubscribe', id: params.id }),
+          body: JSON.stringify({ op:'unsubscribe', id }),
         });
         const j = await r.json().catch(() => ({}));
         if (j?.ok) setState('ok');
@@ -19,7 +23,7 @@ export default function UnsubPage({ params }: { params: { id: string } }) {
       } catch (e:any) { setState('err'); setDetail(String(e?.message||e)); }
     };
     run();
-  }, [params.id]);
+  }, [id]);
 
   return (
     <main className="mx-auto max-w-xl p-6">
