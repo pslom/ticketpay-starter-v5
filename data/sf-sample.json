@@ -1,1 +1,16 @@
-{"items":[{"plate":"7abc123","state":"ca","citation_number":"SF-12345","amount_cents":6500,"issued_at":"2025-08-10T12:00:00Z","location":"Mission & 16th","violation":"No Parking","city":"SF"}]}
+{
+  "items": [
+    {
+      "city": "SF",
+      "plate": "7ABC123",
+      "state": "CA",
+      "citation_number": "SF-TEST-001",
+      "status": "open",
+      "amount_cents": 6500,
+      "issued_at": "2025-07-30T10:15:00Z",
+      "location": "100 Market St",
+      "violation": "Street Cleaning",
+      "source": "seed"
+    }
+  ]
+}

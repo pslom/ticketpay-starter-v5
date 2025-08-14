@@ -1,52 +1,188 @@
+// Node runtime (pg needs Node, not Edge)
 export const runtime = 'nodejs';
-import type { NextRequest } from 'next/server';
-import { getPool } from '@/lib/db';
+export const dynamic = 'force-dynamic';
 
-export async function OPTIONS() { return new Response(null, { status: 204 }); }
+import { NextRequest, NextResponse } from 'next/server';
+import { Pool } from 'pg';
+
+// Prefer your existing getPool() helper if you have it.
+// If you *do* have src/lib/db.ts exporting getPool(), switch to:
+//   import { getPool } from '../../../lib/db';
+//   const pool = getPool();
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+  max: 3,
+});
+
+function json(status: number, body: any) {
+  return new NextResponse(JSON.stringify(body), {
+    status,
+    headers: {
+      'content-type': 'application/json',
+      'access-control-allow-origin': 'https://www.ticketpay.us.com, https://ticketpay.us.com, http://localhost:3000, http://localhost:3010',
+      'access-control-allow-headers': 'authorization, content-type',
+      'access-control-allow-methods': 'OPTIONS, POST',
+    },
+  });
+}
+
+export async function OPTIONS() {
+  return json(204, {});
+}
+
+function normalizePlate(raw: string) {
+  return (raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+function normalizeState(raw: string) {
+  return (raw || '').toUpperCase().trim();
+}
+
+type Item = {
+  city: string;
+  plate: string;
+  state: string;
+  citation_number: string;
+  status: string;
+  amount_cents: number;
+  issued_at: string;        // ISO
+  location?: string | null;
+  violation?: string | null;
+  source?: string | null;
+};
+
+function pickItems(payload: any): Item[] {
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload as Item[];
+  if (Array.isArray(payload.items)) return payload.items as Item[];
+  // single object?
+  if (payload.city && payload.plate && payload.citation_number) return [payload as Item];
+  return [];
+}
 
 export async function POST(req: NextRequest) {
+  // Env guardrails with explicit messages
+  if (!process.env.DATABASE_URL) {
+    return json(500, { ok: false, error: 'env_missing_DATABASE_URL' });
+  }
+  const adminHeader = req.headers.get('authorization') || req.headers.get('Authorization');
+  const token = adminHeader?.toLowerCase().startsWith('bearer ')
+    ? adminHeader.slice(7).trim()
+    : adminHeader?.trim() || '';
+
+  if (!process.env.ADMIN_TOKEN) {
+    return json(500, { ok: false, error: 'env_missing_ADMIN_TOKEN' });
+  }
+  if (!token || token !== process.env.ADMIN_TOKEN) {
+    return json(401, { ok: false, error: 'unauthorized' });
+  }
+
+  let payload: any;
   try {
-    const auth = req.headers.get('authorization') || '';
-    const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
-    if (!process.env.ADMIN_TOKEN || token !== process.env.ADMIN_TOKEN) {
-      return Response.json({ ok:false, error:'unauthorized' }, { status: 401 });
+    payload = await req.json();
+  } catch {
+    return json(400, { ok: false, error: 'invalid_json' });
+  }
+
+  const items = pickItems(payload);
+  if (!items.length) {
+    return json(400, { ok: false, error: 'no_items' });
+  }
+
+  // Validate and normalize
+  const prepared: Array<[
+    string, // city
+    string, // plate
+    string, // plate_normalized
+    string, // state
+    string, // citation_number
+    string, // status
+    number, // amount_cents
+    string, // issued_at
+    string | null, // location
+    string | null, // violation
+    string | null  // source
+  ]> = [];
+
+  for (const it of items) {
+    const city = (it.city || '').toUpperCase().trim();
+    const plate = (it.plate || '').trim();
+    const state = normalizeState(it.state);
+    const citation = (it.citation_number || '').trim();
+    const status = (it.status || '').trim();
+    const amount = Number(it.amount_cents);
+    const issued = (it.issued_at || '').trim();
+
+    if (!city || !plate || !state || !citation || !status || !Number.isFinite(amount) || !issued) {
+      return json(400, { ok: false, error: 'validation_error', detail: { city, plate, state, citation, status, amount, issued } });
     }
 
-    const body = await req.json().catch(() => ({}));
-    const items = Array.isArray(body.items) ? body.items : [];
-    if (items.length === 0) {
-      return Response.json({ ok:false, error:'no_items' }, { status: 400 });
+    prepared.push([
+      city,
+      plate,
+      normalizePlate(plate),
+      state,
+      citation,
+      status,
+      amount,
+      issued,
+      it.location ?? null,
+      it.violation ?? null,
+      it.source ?? null
+    ]);
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Single multi-value INSERT with ON CONFLICT upsert
+    const cols = [
+      'city','plate','plate_normalized','state','citation_number',
+      'status','amount_cents','issued_at','location','violation','source'
+    ];
+
+    // Build parameter matrix
+    const valuesSQL: string[] = [];
+    const params: any[] = [];
+    prepared.forEach((row, i) => {
+      const base = i * row.length;
+      valuesSQL.push(`(${row.map((_, j) => `$${base + j + 1}`).join(',')})`);
+      params.push(...row);
+    });
+
+    const sql = `
+      INSERT INTO public.citations (${cols.join(',')})
+      VALUES ${valuesSQL.join(',')}
+      ON CONFLICT (plate_normalized, state, citation_number, city)
+      DO UPDATE SET
+        status = EXCLUDED.status,
+        amount_cents = EXCLUDED.amount_cents,
+        issued_at = EXCLUDED.issued_at,
+        location = EXCLUDED.location,
+        violation = EXCLUDED.violation,
+        source = EXCLUDED.source
+      RETURNING (xmax = 0) AS inserted;
+    `;
+
+    const r = await client.query<{ inserted: boolean }>(sql, params);
+    const inserted = r.rows.filter(x => x.inserted).length;
+    const updated = r.rowCount - inserted;
+
+    await client.query('COMMIT');
+    return json(200, { ok: true, inserted, updated });
+  } catch (e: any) {
+    // Surface *actionable* error hints
+    const msg = String(e?.message || e || 'unknown');
+    // Common cases: missing relation, invalid column
+    if (msg.includes('relation') && msg.includes('does not exist')) {
+      return json(500, { ok: false, error: 'schema_missing', detail: msg });
     }
-
-    const pool = getPool();
-    const normPlate = (s:string) => s.toUpperCase().replace(/[^A-Za-z0-9]/g, '');
-    const normState = (s:string) => s.toUpperCase();
-    const CITY_DEFAULT = (process.env.CITY_DEFAULT || 'SF').toUpperCase();
-
-    let inserted = 0;
-    for (const it of items) {
-      const plate = String(it.plate||'');
-      const state = String(it.state||'');
-      const citation = String(it.citation_number||'');
-      const amount = Number(it.amount_cents||0);
-      const issued = new Date(it.issued_at||Date.now()).toISOString();
-      const location = it.location ?? null;
-      const violation = it.violation ?? null;
-      const city = String(it.city || CITY_DEFAULT).toUpperCase();
-
-      const res = await pool.query(
-        `insert into citations (city, plate, plate_normalized, state, citation_number, status, amount_cents, issued_at, location, violation, source)
-         values ($1,$2,$3,$4,$5,'unpaid',$6,$7,$8,$9,'sync')
-         on conflict (plate_normalized, state, citation_number, city) do nothing
-         returning id`,
-        [city, plate, normPlate(plate), normState(state), citation, amount, issued, location, violation]
-      );
-      if ((res.rowCount ?? 0) > 0) inserted++;
+    if (msg.includes('invalid input syntax for type')) {
+      return json(400, { ok: false, error: 'bad_input', detail: msg });
     }
-
-    return Response.json({ ok:true, inserted });
-  } catch (e:any) {
-    console.error('ADMIN_SYNC_ERROR', e?.message || e);
-    return Response.json({ ok:false, error:'server_error' }, { status: 500 });
+    return json(500, { ok: false, error: 'server_error', detail: msg });
+  } finally {
+    client.release();
   }
 }
