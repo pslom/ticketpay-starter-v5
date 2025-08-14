@@ -1,24 +1,16 @@
-const { readFileSync } = require("fs");
-const { Client } = require("pg");
-require("dotenv").config({ path: ".env.local" });
-
-if (!process.env.DATABASE_URL || process.env.DATABASE_URL === "REPLACE_ME") {
-  console.error("Missing or placeholder DATABASE_URL in .env.local");
-  process.exit(1);
-}
+require('dotenv').config({ path: '.env.local' });
+const { Client } = require('pg');
+const fs = require('fs');
 
 (async () => {
-  const sql = readFileSync("./scripts/db.sql", "utf8");
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-  });
+  const sql = fs.readFileSync('scripts/schema.sql', 'utf8');
+  const client = new Client({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
   try {
     await client.connect();
     await client.query(sql);
-    console.log("DB schema applied");
+    console.log('DB schema applied');
   } catch (e) {
-    console.error("DB init failed:", e);
+    console.error('DB INIT ERROR', e.message);
     process.exit(1);
   } finally {
     await client.end();
