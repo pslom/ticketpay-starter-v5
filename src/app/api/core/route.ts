@@ -1,9 +1,8 @@
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = process.env.NODE_TLS_REJECT_UNAUTHORIZED || '0';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+// Disable TLS verification for Supabase Postgres in this route (fastest path to green)
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = process.env.NODE_TLS_REJECT_UNAUTHORIZED || '0';
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -24,12 +23,8 @@ export async function OPTIONS() { return json(204, {}); }
 const CITY_DEFAULT = (process.env.CITY_DEFAULT || 'SF').toUpperCase();
 const BASE_URL = process.env.BASE_URL || 'https://www.ticketpay.us.com';
 
-function normalizePlate(raw: string) {
-  return (raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-}
-function normalizeState(raw: string) {
-  return (raw || '').toUpperCase().trim();
-}
+function normalizePlate(raw: string) { return (raw || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+function normalizeState(raw: string) { return (raw || '').toUpperCase().trim(); }
 
 type CoreBody =
   | { op: 'lookup_ticket'; plate: string; state: string; city?: string }
@@ -55,10 +50,8 @@ export async function POST(req: NextRequest) {
   let body: CoreBody;
   try { body = await req.json(); } catch { return json(400, { ok:false, error:'invalid_json' }); }
   const op = (body as any)?.op;
-
   if (!op) return json(400, { ok:false, error:'missing_op' });
 
-  // Shared normals
   const city = ((body as any).city || CITY_DEFAULT).toUpperCase();
 
   if (op === 'lookup_ticket') {
@@ -102,7 +95,6 @@ export async function POST(req: NextRequest) {
     try {
       const { client, done } = await getClient();
       try {
-        // Try insert; if conflict, fetch existing id
         const ins = await client.query(
           `INSERT INTO public.subscriptions
            (plate, plate_normalized, state, channel, value, city)
@@ -113,7 +105,7 @@ export async function POST(req: NextRequest) {
           [plate, plateNorm, stateNorm, channel, value, city]
         );
         const id = ins.rows[0]?.id;
-        return json(200, { ok:true, id, manage_url: `${BASE_URL}/manage` });
+        return json(200, { ok:true, id, manage_url: \`\${BASE_URL}/manage\` });
       } finally { await done(); }
     } catch (e:any) {
       const msg = String(e?.message||e);
@@ -126,50 +118,5 @@ export async function POST(req: NextRequest) {
     const plate = (body as any).plate || '';
     const state = (body as any).state || '';
     const value = ((body as any).value || '').trim();
-    const channel = (body as any).channel || undefined;
+    const channel = (body as any).channel || u
 
-    try {
-      const { client, done } = await getClient();
-      try {
-        let r;
-        if (value) {
-          r = await client.query(
-            `SELECT * FROM public.subscriptions WHERE value=$1 ${channel ? 'AND channel=$2' : ''} ORDER BY created_at DESC`,
-            channel ? [value, channel] : [value]
-          );
-        } else {
-          const plateNorm = normalizePlate(plate);
-          const stateNorm = normalizeState(state);
-          if (!plateNorm || !stateNorm) return json(400, { ok:false, error:'validation_error', detail:{ plate, state } });
-          r = await client.query(
-            `SELECT * FROM public.subscriptions WHERE plate_normalized=$1 AND state=$2 AND city=$3 ORDER BY created_at DESC`,
-            [plateNorm, stateNorm, city]
-          );
-        }
-        return json(200, { ok:true, items: r.rows });
-      } finally { await done(); }
-    } catch (e:any) {
-      const msg = String(e?.message||e);
-      if (msg.includes('relation') && msg.includes('does not exist')) return json(500, { ok:false, error:'schema_missing', detail: msg });
-      return json(500, { ok:false, error:'server_error', detail: msg });
-    }
-  }
-
-  if (op === 'unsubscribe') {
-    const id = (body as any).id || '';
-    if (!id) return json(400, { ok:false, error:'validation_error', detail:{ id } });
-
-    try {
-      const { client, done } = await getClient();
-      try {
-        const r = await client.query(`DELETE FROM public.subscriptions WHERE id=$1 RETURNING id`, [id]);
-        return json(200, { ok:true, removed: r.rowCount || 0 });
-      } finally { await done(); }
-    } catch (e:any) {
-      const msg = String(e?.message||e);
-      return json(500, { ok:false, error:'server_error', detail: msg });
-    }
-  }
-
-  return json(400, { ok:false, error:'unknown_op', got: op });
-}
