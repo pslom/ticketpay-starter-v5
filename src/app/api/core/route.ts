@@ -1,9 +1,6 @@
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// Disable TLS verification for Supabase Postgres in this route (fastest path to green)
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = process.env.NODE_TLS_REJECT_UNAUTHORIZED || '0';
-
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
@@ -33,6 +30,9 @@ type CoreBody =
   | { op: 'unsubscribe'; id: string };
 
 async function getClient() {
+  // Supabase PG + serverless TLS quirk: relax verification at call-time
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
   if (!process.env.DATABASE_URL) throw new Error('env_missing_DATABASE_URL');
   const { Pool } = await import('pg');
   const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized:false }, max: 3 });
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
   if (op === 'subscribe') {
     const plate = (body as any).plate || '';
     const state = (body as any).state || '';
-    const channel = (body as any).channel;
+    const channel = (body as any).channel as 'email'|'sms';
     const value = ((body as any).value || '').trim();
     const plateNorm = normalizePlate(plate);
     const stateNorm = normalizeState(state);
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
           [plate, plateNorm, stateNorm, channel, value, city]
         );
         const id = ins.rows[0]?.id;
-        return json(200, { ok:true, id, manage_url: \`\${BASE_URL}/manage\` });
+        return json(200, { ok:true, id, manage_url: `${BASE_URL}/manage` });
       } finally { await done(); }
     } catch (e:any) {
       const msg = String(e?.message||e);
@@ -118,5 +118,50 @@ export async function POST(req: NextRequest) {
     const plate = (body as any).plate || '';
     const state = (body as any).state || '';
     const value = ((body as any).value || '').trim();
-    const channel = (body as any).channel || u
+    const channel = (body as any).channel as ('email'|'sms'|undefined);
 
+    try {
+      const { client, done } = await getClient();
+      try {
+        let r;
+        if (value) {
+          r = await client.query(
+            `SELECT * FROM public.subscriptions WHERE value=$1 ${channel ? 'AND channel=$2' : ''} ORDER BY created_at DESC`,
+            channel ? [value, channel] : [value]
+          );
+        } else {
+          const plateNorm = normalizePlate(plate);
+          const stateNorm = normalizeState(state);
+          if (!plateNorm || !stateNorm) return json(400, { ok:false, error:'validation_error', detail:{ plate, state } });
+          r = await client.query(
+            `SELECT * FROM public.subscriptions WHERE plate_normalized=$1 AND state=$2 AND city=$3 ORDER BY created_at DESC`,
+            [plateNorm, stateNorm, city]
+          );
+        }
+        return json(200, { ok:true, items: r.rows });
+      } finally { await done(); }
+    } catch (e:any) {
+      const msg = String(e?.message||e);
+      if (msg.includes('relation') && msg.includes('does not exist')) return json(500, { ok:false, error:'schema_missing', detail: msg });
+      return json(500, { ok:false, error:'server_error', detail: msg });
+    }
+  }
+
+  if (op === 'unsubscribe') {
+    const id = (body as any).id || '';
+    if (!id) return json(400, { ok:false, error:'validation_error', detail:{ id } });
+
+    try {
+      const { client, done } = await getClient();
+      try {
+        const r = await client.query(`DELETE FROM public.subscriptions WHERE id=$1 RETURNING id`, [id]);
+        return json(200, { ok:true, removed: r.rowCount || 0 });
+      } finally { await done(); }
+    } catch (e:any) {
+      const msg = String(e?.message||e);
+      return json(500, { ok:false, error:'server_error', detail: msg });
+    }
+  }
+
+  return json(400, { ok:false, error:'unknown_op', got: op });
+}
