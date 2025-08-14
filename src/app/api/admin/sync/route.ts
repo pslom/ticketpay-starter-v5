@@ -23,28 +23,15 @@ function json(status: number, body: any) {
   });
 }
 
-export async function OPTIONS() {
-  return json(204, {});
-}
+export async function OPTIONS() { return json(204, {}); }
 
-function normalizePlate(raw: string) {
-  return (raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-}
-function normalizeState(raw: string) {
-  return (raw || '').toUpperCase().trim();
-}
+function normalizePlate(raw: string) { return (raw || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+function normalizeState(raw: string) { return (raw || '').toUpperCase().trim(); }
 
 type Item = {
-  city: string;
-  plate: string;
-  state: string;
-  citation_number: string;
-  status: string;
-  amount_cents: number;
-  issued_at: string;        // ISO
-  location?: string | null;
-  violation?: string | null;
-  source?: string | null;
+  city: string; plate: string; state: string; citation_number: string;
+  status: string; amount_cents: number; issued_at: string;
+  location?: string | null; violation?: string | null; source?: string | null;
 };
 
 function pickItems(payload: any): Item[] {
@@ -69,10 +56,7 @@ export async function POST(req: NextRequest) {
   const items = pickItems(payload);
   if (!items.length) return json(400, { ok:false, error:'no_items' });
 
-  const prepared: Array<[
-    string,string,string,string,string,string,number,string,string|null,string|null,string|null
-  ]> = [];
-
+  const prepared: Array<[string,string,string,string,string,string,number,string,string|null,string|null,string|null]> = [];
   for (const it of items) {
     const city = (it.city || '').toUpperCase().trim();
     const plate = (it.plate || '').trim();
@@ -81,35 +65,16 @@ export async function POST(req: NextRequest) {
     const status = (it.status || '').trim();
     const amount = Number(it.amount_cents);
     const issued = (it.issued_at || '').trim();
-
     if (!city || !plate || !state || !citation || !status || !Number.isFinite(amount) || !issued) {
       return json(400, { ok:false, error:'validation_error', detail:{ city, plate, state, citation, status, amount, issued } });
     }
-
-    prepared.push([
-      city,
-      plate,
-      normalizePlate(plate),
-      state,
-      citation,
-      status,
-      amount,
-      issued,
-      it.location ?? null,
-      it.violation ?? null,
-      it.source ?? null
-    ]);
+    prepared.push([ city, plate, normalizePlate(plate), state, citation, status, amount, issued, it.location ?? null, it.violation ?? null, it.source ?? null ]);
   }
 
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-
-    const cols = [
-      'city','plate','plate_normalized','state','citation_number',
-      'status','amount_cents','issued_at','location','violation','source'
-    ];
-
+    const cols = ['city','plate','plate_normalized','state','citation_number','status','amount_cents','issued_at','location','violation','source'];
     const valuesSQL: string[] = [];
     const params: any[] = [];
     prepared.forEach((row, i) => {
@@ -117,7 +82,6 @@ export async function POST(req: NextRequest) {
       valuesSQL.push(`(${row.map((_, j) => `$${base + j + 1}`).join(',')})`);
       params.push(...row);
     });
-
     const sql = `
       INSERT INTO public.citations (${cols.join(',')})
       VALUES ${valuesSQL.join(',')}
@@ -131,22 +95,16 @@ export async function POST(req: NextRequest) {
         source = EXCLUDED.source
       RETURNING (xmax = 0) AS inserted;
     `;
-
     const r = await client.query<{ inserted: boolean }>(sql, params);
     const inserted = r.rows.filter(x => x.inserted).length;
     const total = (r.rowCount ?? r.rows.length);
     const updated = total - inserted;
-
     await client.query('COMMIT');
     return json(200, { ok:true, inserted, updated });
   } catch (e:any) {
     const msg = String(e?.message || e || 'unknown');
-    if (msg.includes('relation') && msg.includes('does not exist')) {
-      return json(500, { ok:false, error:'schema_missing', detail: msg });
-    }
-    if (msg.includes('invalid input syntax for type')) {
-      return json(400, { ok:false, error:'bad_input', detail: msg });
-    }
+    if (msg.includes('relation') && msg.includes('does not exist')) return json(500, { ok:false, error:'schema_missing', detail: msg });
+    if (msg.includes('invalid input syntax for type')) return json(400, { ok:false, error:'bad_input', detail: msg });
     return json(500, { ok:false, error:'server_error', detail: msg });
   } finally {
     client.release();
