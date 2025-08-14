@@ -14,8 +14,7 @@ function authOK(req: NextRequest, cronSecret: string, admin: string) {
   const q  = (req.nextUrl.searchParams.get('secret') || '').trim();
   const adminHdr = (req.headers.get('x-admin-token') || '').trim();
   return (
-    (!!cronSecret && (b === cronSecret || h2 === cronSecret || q === cronSecret)) ||
-    (!!admin && adminHdr === admin) // fallback for manual testing
+    (!!cronSecret && (b === cronSecret || h2 === cronSecret || q === cronSecret)) 
   );
 }
 
