@@ -1,9 +1,6 @@
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// Disable TLS verification for Supabase Postgres in this route
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = process.env.NODE_TLS_REJECT_UNAUTHORIZED || '0';
-
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
@@ -23,6 +20,9 @@ function readToken(req: NextRequest): string {
 }
 
 export async function GET(req: NextRequest) {
+  // turn off TLS verification only inside the handler
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
   if (!process.env.ADMIN_TOKEN) return j(500, { ok:false, error:'env_missing_ADMIN_TOKEN' });
   const token = readToken(req);
   if (token !== process.env.ADMIN_TOKEN) return j(401, { ok:false, error:'unauthorized' });
