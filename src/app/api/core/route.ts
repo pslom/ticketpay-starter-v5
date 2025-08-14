@@ -30,12 +30,9 @@ type CoreBody =
   | { op: 'unsubscribe'; id: string };
 
 async function getClient() {
-  // Supabase PG + serverless TLS quirk: relax verification at call-time
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-
   if (!process.env.DATABASE_URL) throw new Error('env_missing_DATABASE_URL');
   const { Pool } = await import('pg');
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized:false }, max: 3 });
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 3 });
   const client = await pool.connect();
   return {
     client,
@@ -105,6 +102,23 @@ export async function POST(req: NextRequest) {
           [plate, plateNorm, stateNorm, channel, value, city]
         );
         const id = ins.rows[0]?.id;
+
+        // Fire-and-forget confirmation if envs present
+        try {
+          const { notify } = await import('../../../lib/notify');
+          const manage = `${BASE_URL}/manage`;
+          const unsub  = `${BASE_URL}/unsubscribe/${id}`;
+          const text =
+            `TicketPay: subscribed to ${plateNorm}/${stateNorm} (${city}). Manage: ${manage} — Unsubscribe: ${unsub}`;
+          if ((process.env.SENDGRID_API_KEY && process.env.SENDGRID_FROM) && channel === 'email') {
+            notify({ channel:'email', to: value, subject:'TicketPay subscription', text,
+                     html: `<p>${text}</p><p><a href="${unsub}">Unsubscribe</a></p>` }).catch(()=>{});
+          }
+          if ((process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_FROM) && channel === 'sms') {
+            notify({ channel:'sms', to: value, text }).catch(()=>{});
+          }
+        } catch {}
+
         return json(200, { ok:true, id, manage_url: `${BASE_URL}/manage` });
       } finally { await done(); }
     } catch (e:any) {
