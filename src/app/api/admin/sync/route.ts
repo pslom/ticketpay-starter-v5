@@ -16,7 +16,6 @@ function json(status: number, body: any) {
     },
   });
 }
-
 export async function OPTIONS() { return json(204, {}); }
 
 function readToken(req: NextRequest): string {
@@ -35,7 +34,6 @@ type Item = {
   status: string; amount_cents: number; issued_at: string;
   location?: string | null; violation?: string | null; source?: string | null;
 };
-
 function pickItems(payload: any): Item[] {
   if (!payload) return [];
   if (Array.isArray(payload)) return payload as Item[];
@@ -72,46 +70,50 @@ export async function POST(req: NextRequest) {
     prepared.push([ city, plate, normalizePlate(plate), state, citation, status, amount, issued, it.location ?? null, it.violation ?? null, it.source ?? null ]);
   }
 
-  // Defer pg import and create the pool inside the handler
-  const { Pool } = await import('pg');
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized:false }, max: 3 });
-  const client = await pool.connect();
   try {
-    await client.query('BEGIN');
-    const cols = ['city','plate','plate_normalized','state','citation_number','status','amount_cents','issued_at','location','violation','source'];
-    const valuesSQL: string[] = [];
-    const params: any[] = [];
-    prepared.forEach((row, i) => {
-      const base = i * row.length;
-      valuesSQL.push(`(${row.map((_, j) => `$${base + j + 1}`).join(',')})`);
-      params.push(...row);
-    });
-    const sql = `
-      INSERT INTO public.citations (${cols.join(',')})
-      VALUES ${valuesSQL.join(',')}
-      ON CONFLICT (plate_normalized, state, citation_number, city)
-      DO UPDATE SET
-        status = EXCLUDED.status,
-        amount_cents = EXCLUDED.amount_cents,
-        issued_at = EXCLUDED.issued_at,
-        location = EXCLUDED.location,
-        violation = EXCLUDED.violation,
-        source = EXCLUDED.source
-      RETURNING (xmax = 0) AS inserted;
-    `;
-    const r = await client.query<{ inserted: boolean }>(sql, params);
-    const inserted = r.rows.filter(x => x.inserted).length;
-    const total = (r.rowCount ?? r.rows.length);
-    const updated = total - inserted;
-    await client.query('COMMIT');
-    return json(200, { ok:true, inserted, updated });
+    const { Pool } = await import('pg'); // may throw
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized:false }, max: 3 });
+    const client = await pool.connect(); // may throw
+
+    try {
+      await client.query('BEGIN');
+      const cols = ['city','plate','plate_normalized','state','citation_number','status','amount_cents','issued_at','location','violation','source'];
+      const valuesSQL: string[] = [];
+      const params: any[] = [];
+      prepared.forEach((row, i) => {
+        const base = i * row.length;
+        valuesSQL.push(`(${row.map((_, j) => `$${base + j + 1}`).join(',')})`);
+        params.push(...row);
+      });
+      const sql = `
+        INSERT INTO public.citations (${cols.join(',')})
+        VALUES ${valuesSQL.join(',')}
+        ON CONFLICT (plate_normalized, state, citation_number, city)
+        DO UPDATE SET
+          status = EXCLUDED.status,
+          amount_cents = EXCLUDED.amount_cents,
+          issued_at = EXCLUDED.issued_at,
+          location = EXCLUDED.location,
+          violation = EXCLUDED.violation,
+          source = EXCLUDED.source
+        RETURNING (xmax = 0) AS inserted;
+      `;
+      const r = await client.query<{ inserted: boolean }>(sql, params);
+      const inserted = r.rows.filter(x => x.inserted).length;
+      const total = (r.rowCount ?? r.rows.length);
+      const updated = total - inserted;
+      await client.query('COMMIT');
+      return json(200, { ok:true, inserted, updated });
+    } finally {
+      try { (await pool).end?.(); } catch {}
+      try { client.release(); } catch {}
+      await pool.end().catch(()=>{});
+    }
   } catch (e:any) {
+    console.error('ADMIN_SYNC_ERROR', e?.message || e);
     const msg = String(e?.message || e || 'unknown');
     if (msg.includes('relation') && msg.includes('does not exist')) return json(500, { ok:false, error:'schema_missing', detail: msg });
     if (msg.includes('invalid input syntax for type')) return json(400, { ok:false, error:'bad_input', detail: msg });
-    return json(500, { ok:false, error:'server_error', detail: msg });
-  } finally {
-    await client.release();
-    await pool.end().catch(()=>{});
+    return json(500, { ok:false, error:'db_error', detail: msg });
   }
 }
