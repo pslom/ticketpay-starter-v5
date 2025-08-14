@@ -40,3 +40,7 @@ async function sendSMS(to: string, body: string) {
   });
   return { ok: r.status >= 200 && r.status < 300, status: r.status };
 }
+
+/** Export named functions to satisfy existing imports in /api/subscribe */
+export { sendEmail };
+export { sendSMS as sendSms };
