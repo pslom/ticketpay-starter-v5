@@ -1,23 +1,8 @@
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-import { NextRequest, NextResponse } from 'next/server';
-import { Pool } from 'pg';
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-  max: 3,
-});
-
-
-function readToken(req: NextRequest): string {
-  const q = req.nextUrl.searchParams.get('token')?.trim() || '';
-  const h1 = req.headers.get('authorization') || req.headers.get('Authorization') || '';
-  const bearer = h1.toLowerCase().startsWith('bearer ') ? h1.slice(7).trim() : '';
-  const h2 = req.headers.get('x-admin-token')?.trim() || '';
-  return bearer || h2 || q || '';
-}
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 function json(status: number, body: any) {
   return new NextResponse(JSON.stringify(body), {
@@ -26,13 +11,21 @@ function json(status: number, body: any) {
       'content-type': 'application/json',
       'x-admin-sync': 'v2',
       'access-control-allow-origin': 'https://www.ticketpay.us.com, https://ticketpay.us.com, http://localhost:3000, http://localhost:3010',
-      'access-control-allow-headers': 'authorization, content-type',
+      'access-control-allow-headers': 'authorization, x-admin-token, content-type',
       'access-control-allow-methods': 'OPTIONS, POST',
     },
   });
 }
 
 export async function OPTIONS() { return json(204, {}); }
+
+function readToken(req: NextRequest): string {
+  const q = req.nextUrl.searchParams.get('token')?.trim() || '';
+  const h1 = req.headers.get('authorization') || req.headers.get('Authorization') || '';
+  const bearer = h1.toLowerCase().startsWith('bearer ') ? h1.slice(7).trim() : '';
+  const h2 = req.headers.get('x-admin-token')?.trim() || '';
+  return bearer || h2 || q || '';
+}
 
 function normalizePlate(raw: string) { return (raw || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
 function normalizeState(raw: string) { return (raw || '').toUpperCase().trim(); }
@@ -79,6 +72,9 @@ export async function POST(req: NextRequest) {
     prepared.push([ city, plate, normalizePlate(plate), state, citation, status, amount, issued, it.location ?? null, it.violation ?? null, it.source ?? null ]);
   }
 
+  // Defer pg import and create the pool inside the handler
+  const { Pool } = await import('pg');
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized:false }, max: 3 });
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -115,6 +111,7 @@ export async function POST(req: NextRequest) {
     if (msg.includes('invalid input syntax for type')) return json(400, { ok:false, error:'bad_input', detail: msg });
     return json(500, { ok:false, error:'server_error', detail: msg });
   } finally {
-    client.release();
+    await client.release();
+    await pool.end().catch(()=>{});
   }
 }
