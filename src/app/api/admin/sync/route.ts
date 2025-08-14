@@ -1,6 +1,9 @@
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+// Disable TLS verification for Supabase Postgres in this route
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = process.env.NODE_TLS_REJECT_UNAUTHORIZED || '0';
+
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
@@ -71,9 +74,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { Pool } = await import('pg'); // may throw
+    const { Pool } = await import('pg');
     const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized:false }, max: 3 });
-    const client = await pool.connect(); // may throw
+    const client = await pool.connect();
 
     try {
       await client.query('BEGIN');
@@ -105,9 +108,8 @@ export async function POST(req: NextRequest) {
       await client.query('COMMIT');
       return json(200, { ok:true, inserted, updated });
     } finally {
-      try { (await pool).end?.(); } catch {}
       try { client.release(); } catch {}
-      await pool.end().catch(()=>{});
+      try { await pool.end(); } catch {}
     }
   } catch (e:any) {
     console.error('ADMIN_SYNC_ERROR', e?.message || e);

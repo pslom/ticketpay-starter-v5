@@ -1,6 +1,9 @@
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+// Disable TLS verification for Supabase Postgres in this route
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = process.env.NODE_TLS_REJECT_UNAUTHORIZED || '0';
+
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
@@ -26,9 +29,9 @@ export async function GET(req: NextRequest) {
   if (!process.env.DATABASE_URL) return j(500, { ok:false, error:'env_missing_DATABASE_URL' });
 
   try {
-    const { Pool } = await import('pg'); // may throw if pg not present
+    const { Pool } = await import('pg');
     const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized:false }, max: 2 });
-    const client = await pool.connect();  // may throw if pool can’t connect
+    const client = await pool.connect();
     try {
       const ping = await client.query('select 1 as one');
       const hasCitations = await client.query("select to_regclass('public.citations') as tbl");
@@ -41,8 +44,8 @@ export async function GET(req: NextRequest) {
         subscriptions: hasSubs.rows[0].tbl
       });
     } finally {
-      client.release();
-      await pool.end().catch(()=>{});
+      try { client.release(); } catch {}
+      try { await pool.end(); } catch {}
     }
   } catch (e:any) {
     console.error('DBCHECK_ERROR', e?.message || e);

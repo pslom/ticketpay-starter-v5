@@ -1,5 +1,9 @@
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = process.env.NODE_TLS_REJECT_UNAUTHORIZED || '0';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
