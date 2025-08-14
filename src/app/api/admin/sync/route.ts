@@ -16,38 +16,40 @@ const item = z.object({
 });
 const payloadSchema = z.object({ items: z.array(item).min(1) });
 
-export async function POST(req: NextRequest) {
-  const auth = req.headers.get('authorization') || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
-  if (!process.env.ADMIN_TOKEN || token !== process.env.ADMIN_TOKEN) {
-    return Response.json({ ok:false, error:'unauthorized' }, { status: 401 });
-  }
-
-  let parsed;
-  try { parsed = payloadSchema.parse(await req.json()); }
-  catch { return Response.json({ ok:false, error:'invalid_input' }, { status: 400 }); }
-
-  const pool = getPool();
-  let inserted = 0;
-
-  for (const it of parsed.items) {
-    const plateNorm = normalizePlate(it.plate);
-    const stateNorm = normalizeState(it.state);
-    const cityUse = (it.city || CITY_DEFAULT).toUpperCase();
-
-    const res = await pool.query(
-      `insert into citations (city, plate, plate_normalized, state, citation_number, status, amount_cents, issued_at, location, violation, source)
-       values ($1,$2,$3,$4,$5,'unpaid',$6,$7,$8,$9,'sync')
-       on conflict (plate_normalized, state, citation_number, city) do nothing
-       returning id`,
-      [cityUse, it.plate, plateNorm, stateNorm, it.citation_number, it.amount_cents, it.issued_at, it.location || null, it.violation || null]
-    );
-
-    const count = (res.rowCount ?? 0); // pg types: number | null
-    if (count > 0) inserted++;
-  }
-
-  return Response.json({ ok:true, inserted });
-}
-
 export async function OPTIONS() { return new Response(null, { status: 204 }); }
+
+export async function POST(req: NextRequest) {
+  try {
+    const auth = req.headers.get('authorization') || '';
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+    if (!process.env.ADMIN_TOKEN || token !== process.env.ADMIN_TOKEN) {
+      return Response.json({ ok:false, error:'unauthorized' }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const parsed = payloadSchema.parse(body);
+
+    const pool = getPool();
+    let inserted = 0;
+
+    for (const it of parsed.items) {
+      const plateNorm = normalizePlate(it.plate);
+      const stateNorm = normalizeState(it.state);
+      const cityUse = (it.city || CITY_DEFAULT).toUpperCase();
+
+      const res = await pool.query(
+        `insert into citations (city, plate, plate_normalized, state, citation_number, status, amount_cents, issued_at, location, violation, source)
+         values ($1,$2,$3,$4,$5,'unpaid',$6,$7,$8,$9,'sync')
+         on conflict (plate_normalized, state, citation_number, city) do nothing
+         returning id`,
+        [cityUse, it.plate, plateNorm, stateNorm, it.citation_number, it.amount_cents, it.issued_at, it.location || null, it.violation || null]
+      );
+      if ((res.rowCount ?? 0) > 0) inserted++;
+    }
+
+    return Response.json({ ok:true, inserted });
+  } catch (e: any) {
+    console.error('ADMIN_SYNC_ERROR', { message: e?.message, stack: e?.stack });
+    return Response.json({ ok:false, error:'server_error' }, { status: 500 });
+  }
+}
