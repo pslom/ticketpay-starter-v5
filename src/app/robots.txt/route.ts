@@ -1,9 +1,6 @@
 export async function GET() {
-  return new Response(
-    'User-agent: *
+  return new Response(`User-agent: *
 Allow: /
 Sitemap: https://www.ticketpay.us.com/sitemap.xml
-',
-    { headers: { 'content-type': 'text/plain' } }
-  );
+`, { headers: { 'content-type': 'text/plain' } });
 }
