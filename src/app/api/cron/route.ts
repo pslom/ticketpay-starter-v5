@@ -4,31 +4,38 @@ export const dynamic = 'force-dynamic';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-function authOK(req: NextRequest, secret: string) {
-  if (!secret) return false;
-  const h1 = req.headers.get('authorization') || req.headers.get('Authorization') || '';
-  const bearer = h1.toLowerCase().startsWith('bearer ') ? h1.slice(7).trim() : '';
+function bearer(req: NextRequest) {
+  const h = req.headers.get('authorization') || req.headers.get('Authorization') || '';
+  return h.toLowerCase().startsWith('bearer ') ? h.slice(7).trim() : '';
+}
+
+function authOK(req: NextRequest, secret: string, admin: string) {
+  const b = bearer(req);
   const h2 = (req.headers.get('x-cron-secret') || '').trim();
   const q = (req.nextUrl.searchParams.get('secret') || '').trim();
-  return bearer === secret || h2 === secret || q === secret;
+  const adminHdr = (req.headers.get('x-admin-token') || '').trim();
+  return (
+    (!!secret && (b === secret || h2 === secret || q === secret)) ||
+    (!!admin && adminHdr === admin) // fallback for manual testing
+  );
 }
 
 export async function GET(req: NextRequest) {
   const secret = (process.env.CRON_SECRET || '').trim();
-  if (!secret) {
-    return NextResponse.json({ ok:false, error:'env_missing_CRON_SECRET' }, { status: 500 });
+  const admin  = (process.env.ADMIN_TOKEN || '').trim();
+  if (!secret && !admin) {
+    return NextResponse.json({ ok:false, error:'env_missing_secrets' }, { status: 500 });
   }
-  if (!authOK(req, secret)) {
+  if (!authOK(req, secret, admin)) {
     return NextResponse.json({ ok:false, error:'unauthorized' }, { status: 401 });
   }
 
-  // Optional: ping dbcheck to verify DB connectivity
-  const base = process.env.BASE_URL || 'https://www.ticketpay.us.com';
-  const admin = process.env.ADMIN_TOKEN || '';
+  // Ping dbcheck so cron verifies DB up
   if (!admin) return NextResponse.json({ ok:true, note:'no ADMIN_TOKEN; skipped dbcheck' });
 
   try {
-    const url = `${base}/api/admin/dbcheck?token=${encodeURIComponent(admin)}&t=${Date.now()}`;
+    const base = process.env.BASE_URL || 'https://www.ticketpay.us.com';
+    const url  = `${base}/api/admin/dbcheck?token=${encodeURIComponent(admin)}&t=${Date.now()}`;
     const r = await fetch(url, { cache: 'no-store' });
     const data = await r.json().catch(() => ({ ok:false, error:'non_json_response' }));
     return NextResponse.json({ ok:true, upstream_status: r.status, data });
