@@ -10,6 +10,15 @@ const pool = new Pool({
   max: 3,
 });
 
+
+function readToken(req: NextRequest): string {
+  const q = req.nextUrl.searchParams.get('token')?.trim() || '';
+  const h1 = req.headers.get('authorization') || req.headers.get('Authorization') || '';
+  const bearer = h1.toLowerCase().startsWith('bearer ') ? h1.slice(7).trim() : '';
+  const h2 = req.headers.get('x-admin-token')?.trim() || '';
+  return bearer || h2 || q || '';
+}
+
 function json(status: number, body: any) {
   return new NextResponse(JSON.stringify(body), {
     status,
@@ -45,8 +54,7 @@ function pickItems(payload: any): Item[] {
 export async function POST(req: NextRequest) {
   if (!process.env.DATABASE_URL) return json(500, { ok:false, error:'env_missing_DATABASE_URL' });
 
-  const hdr = req.headers.get('authorization') || req.headers.get('Authorization') || '';
-  const token = hdr.toLowerCase().startsWith('bearer ') ? hdr.slice(7).trim() : hdr.trim();
+  const token = readToken(req);
   if (!process.env.ADMIN_TOKEN) return json(500, { ok:false, error:'env_missing_ADMIN_TOKEN' });
   if (!token || token !== process.env.ADMIN_TOKEN) return json(401, { ok:false, error:'unauthorized' });
 

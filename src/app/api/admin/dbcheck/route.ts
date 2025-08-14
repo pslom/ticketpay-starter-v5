@@ -11,11 +11,19 @@ function j(status: number, body: any) {
   });
 }
 
+function readToken(req: NextRequest): string {
+  const q = req.nextUrl.searchParams.get('token')?.trim() || '';
+  const h1 = req.headers.get('authorization') || req.headers.get('Authorization') || '';
+  const bearer = h1.toLowerCase().startsWith('bearer ') ? h1.slice(7).trim() : '';
+  const h2 = req.headers.get('x-admin-token')?.trim() || '';
+  return bearer || h2 || q || '';
+}
+
 export async function GET(req: NextRequest) {
-  const hdr = req.headers.get('authorization') || req.headers.get('Authorization') || '';
-  const token = hdr.toLowerCase().startsWith('bearer ') ? hdr.slice(7).trim() : hdr.trim();
   if (!process.env.ADMIN_TOKEN) return j(500, { ok:false, error:'env_missing_ADMIN_TOKEN' });
+  const token = readToken(req);
   if (token !== process.env.ADMIN_TOKEN) return j(401, { ok:false, error:'unauthorized' });
+
   if (!process.env.DATABASE_URL) return j(500, { ok:false, error:'env_missing_DATABASE_URL' });
 
   const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized:false }, max: 2 });
