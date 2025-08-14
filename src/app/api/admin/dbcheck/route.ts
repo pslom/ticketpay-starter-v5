@@ -16,7 +16,6 @@ export async function GET(req: NextRequest) {
   const token = hdr.toLowerCase().startsWith('bearer ') ? hdr.slice(7).trim() : hdr.trim();
   if (!process.env.ADMIN_TOKEN) return j(500, { ok:false, error:'env_missing_ADMIN_TOKEN' });
   if (token !== process.env.ADMIN_TOKEN) return j(401, { ok:false, error:'unauthorized' });
-
   if (!process.env.DATABASE_URL) return j(500, { ok:false, error:'env_missing_DATABASE_URL' });
 
   const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized:false }, max: 2 });
