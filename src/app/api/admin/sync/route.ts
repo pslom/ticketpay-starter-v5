@@ -167,6 +167,8 @@ export async function POST(req: NextRequest) {
 
     const r = await client.query<{ inserted: boolean }>(sql, params);
     const inserted = r.rows.filter(x => x.inserted).length;
+    const total = (r.rowCount ?? r.rows.length);
+    const updated = total - inserted;
     const updated = r.rowCount - inserted;
 
     await client.query('COMMIT');
