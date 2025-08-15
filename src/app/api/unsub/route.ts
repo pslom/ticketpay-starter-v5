@@ -4,48 +4,70 @@ export const dynamic = 'force-dynamic';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { getPool } from '../../../lib/pg';
+import { z } from 'zod';
 
-const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const ORIGINS = [
-  'https://www.ticketpay.us.com',
-  'https://ticketpay.us.com',
-  'http://localhost:3000',
-  'http://localhost:3010'
-];
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function parseAllowedOrigins(): string[] {
+  const raw = process.env.ALLOWED_ORIGINS || '';
+  if (!raw) return [
+    'https://www.ticketpay.us.com',
+    'https://ticketpay.us.com',
+    'http://localhost:3000',
+    'http://localhost:3010'
+  ];
+  return raw.split(',').map(s => s.trim()).filter(Boolean);
+}
+
+const ORIGINS = parseAllowedOrigins();
 
 function corsHeaders(req: NextRequest) {
   const origin = req.headers.get('origin') || '';
-  const allow = ORIGINS.includes(origin) ? origin : 'https://ticketpay.us.com';
+  const allow = ORIGINS.includes(origin) ? origin : ORIGINS[0];
   return {
-    'content-type':'application/json',
-    'x-unsub-ver':'v6',
+    'content-type': 'application/json',
+    'x-unsub-ver': 'v6',
     'access-control-allow-origin': allow,
-    'access-control-allow-headers':'content-type, authorization',
-    'access-control-allow-methods':'OPTIONS, GET, POST',
-    'access-control-max-age':'86400'
-  } as Record<string,string>;
+    'access-control-allow-headers': 'content-type, authorization',
+    'access-control-allow-methods': 'OPTIONS, GET, POST',
+    'access-control-max-age': '86400'
+  } as Record<string, string>;
 }
+
 function j(req: NextRequest, status: number, body: any) {
   return new NextResponse(JSON.stringify(body), { status, headers: corsHeaders(req) });
 }
+
+const bodySchema = z.object({ id: z.string().optional().nullable() });
 
 async function handle(req: NextRequest, id: string) {
   try {
     const safe = (id || '').trim();
     // Idempotent UX: treat empty/invalid IDs as already unsubscribed
-    if (!safe || !UUID_RE.test(safe)) return j(req, 200, { ok:true, removed:0, note:'invalid_or_empty_id' });
+    if (!safe || !UUID_RE.test(safe)) return j(req, 200, { ok: true, removed: 0, note: 'invalid_or_empty_id' });
 
     const pool = getPool();
     const client = await pool.connect();
     try {
       const r = await client.query('DELETE FROM public.subscriptions WHERE id=$1::uuid RETURNING id', [safe]);
-      return j(req, 200, { ok:true, removed: r.rowCount || 0 });
+      return j(req, 200, { ok: true, removed: r.rowCount || 0 });
     } finally { client.release(); }
-  } catch (e:any) {
-    return j(req, 500, { ok:false, error:'server_error', detail:String(e?.message||e) });
+  } catch (e: any) {
+    return j(req, 500, { ok: false, error: 'server_error', detail: String(e?.message || e) });
   }
 }
 
 export async function OPTIONS(req: NextRequest) { return j(req, 204, {}); }
-export async function GET(req: NextRequest) { return handle(req, String(req.nextUrl.searchParams.get('id')||'')); }
-export async function POST(req: NextRequest) { let id=''; try { const b=await req.json(); id=String(b?.id||''); } catch {} return handle(req, id); }
+export async function GET(req: NextRequest) { return handle(req, String(req.nextUrl.searchParams.get('id') || '')); }
+export async function POST(req: NextRequest) {
+  let id = '';
+  try {
+    const raw = await req.text();
+    // try parse JSON safely and validate with zod
+    let parsed: any = {};
+    try { parsed = raw ? JSON.parse(raw) : {}; } catch {}
+    const result = bodySchema.safeParse(parsed);
+    if (result.success) id = String(result.data.id || '');
+  } catch (e) { /* ignore */ }
+  return handle(req, id);
+}
