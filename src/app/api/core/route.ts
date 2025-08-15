@@ -32,11 +32,18 @@ type CoreBody =
 async function getClient() {
   if (!process.env.DATABASE_URL) throw new Error('env_missing_DATABASE_URL');
   const { Pool } = await import('pg');
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 3 });
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    max: 3,
+    ssl: { rejectUnauthorized: false }, // fix: supabase tls chain
+  });
   const client = await pool.connect();
   return {
     client,
-    async done() { try { client.release(); } finally { try { await pool.end(); } catch {} } }
+    async done() {
+      try { client.release(); } catch {}
+      try { await pool.end(); } catch {}
+    }
   };
 }
 
@@ -89,20 +96,32 @@ export async function POST(req: NextRequest) {
     try {
       const { client, done } = await getClient();
       try {
+        // 1) Try insert
         const ins = await client.query(
           `INSERT INTO public.subscriptions
            (plate, plate_normalized, state, channel, value, city)
            VALUES ($1,$2,$3,$4,$5,$6)
            ON CONFLICT (plate_normalized, state, channel, value, city)
-           DO UPDATE SET value = EXCLUDED.value
-           RETURNING id, (xmax = 0) AS inserted`,
+           DO NOTHING
+           RETURNING id`,
           [plate, plateNorm, stateNorm, channel, value, city]
         );
-        const id = ins.rows[0]?.id;
-        const inserted = !!ins.rows[0]?.inserted;
-        const deduped = !inserted;
+        let id = ins.rows[0]?.id as string|undefined;
+        let deduped = false;
 
-        // Fire-and-forget confirmation (if envs present)
+        // 2) If deduped, look up existing id
+        if (!id) {
+          deduped = true;
+          const sel = await client.query(
+            `SELECT id FROM public.subscriptions
+             WHERE plate_normalized=$1 AND state=$2 AND channel=$3 AND value=$4 AND city=$5
+             LIMIT 1`,
+            [plateNorm, stateNorm, channel, value, city]
+          );
+          id = sel.rows[0]?.id;
+        }
+
+        // 3) Fire-and-forget confirmation (if envs present)
         try {
           const { notify } = await import('../../../lib/notify');
           const manage = `${BASE_URL}/manage`;
@@ -118,7 +137,7 @@ export async function POST(req: NextRequest) {
           }
         } catch {}
 
-        return json(200, { ok:true, id, manage_url: `${BASE_URL}/manage`, deduped });
+        return json(200, { ok:true, id: id ?? null, manage_url: `${BASE_URL}/manage`, deduped });
       } finally { await done(); }
     } catch (e:any) {
       const msg = String(e?.message||e);
