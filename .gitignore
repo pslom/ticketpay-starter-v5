@@ -50,3 +50,4 @@ supabase-ca.pem
 # local certs
 *.cer
 supabase-ca.pem
+.env.local
