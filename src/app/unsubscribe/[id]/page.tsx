@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 
-export default function Page({ params }: { params: { id: string } }) {
+export default function Page(props: any) {
+  const id: string = typeof props?.params?.id === 'string' ? props.params.id : '';
   const [state, setState] = useState<'idle'|'ok'|'err'>('idle');
   const [detail, setDetail] = useState('');
 
@@ -12,7 +13,7 @@ export default function Page({ params }: { params: { id: string } }) {
         const r = await fetch('/api/unsub', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ id: params.id }),
+          body: JSON.stringify({ id }),
           cache: 'no-store'
         });
         const j = await r.json().catch(() => ({} as any));
@@ -23,7 +24,7 @@ export default function Page({ params }: { params: { id: string } }) {
       }
     };
     run();
-  }, [params.id]);
+  }, [id]);
 
   return (
     <main className="mx-auto max-w-xl p-6">
