@@ -13,8 +13,9 @@ function getRedis() {
 
 export async function limit(key: string, max: number, windowSeconds: number) {
   const redis = getRedis();
-  if (!redis) return { ok: true, remaining: max, reset: Date.now() + windowSeconds * 1000, noop: true };
+  if (!redis) return { ok: true, remaining: max, reset: Date.now() + windowSeconds * 1000, noop: true as const };
   const rl = new Ratelimit({ redis, limiter: Ratelimit.fixedWindow(max, `${windowSeconds} s`) });
   const res = await rl.limit(key);
-  return { ok: res.success, remaining: res.remaining, reset: res.reset, id: res.id };
+  // Note: RatelimitResponse has { success, limit, remaining, reset, pending }; no `id`.
+  return { ok: res.success, remaining: res.remaining, reset: Number(res.reset) };
 }
