@@ -18,36 +18,26 @@ function j(s:number,b:any){
 }
 export async function OPTIONS(){ return j(204,{}); }
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 async function handle(id: string) {
   try {
-    const safe = String(id || '').trim();
-    if (!UUID_RE.test(safe)) return j(200, { ok:true, removed:0 }); // treat as already-unsubscribed
-
-    const pool = getPool();
-    const client = await pool.connect();
-    try {
-      const r = await client.query(
-        'DELETE FROM public.subscriptions WHERE id=$1::uuid RETURNING id',
-        [safe]
-      );
-      return j(200, { ok:true, removed: r.rowCount || 0 });
-    } finally {
-      client.release();
-    }
-  } catch (e:any) {
-    return j(500, { ok:false, error:'server_error', detail:String(e?.message||e) });
+    const safe=(id||'').trim();
+    if (!safe || !UUID_RE.test(safe)) return j(200,{ ok:true, removed:0 }); // treat as already unsubscribed
+    const pool=getPool(); const client=await pool.connect();
+    try{
+      const r=await client.query('DELETE FROM public.subscriptions WHERE id=$1::uuid RETURNING id',[safe]);
+      return j(200,{ ok:true, removed:r.rowCount||0 });
+    } finally { client.release(); }
+  } catch(e:any){
+    return j(500,{ ok:false, error:'server_error', detail:String(e?.message||e) });
   }
 }
 
-export async function POST(req: NextRequest) {
-  let id = '';
-  try { const body = await req.json(); id = String(body?.id || ''); } catch {}
+export async function POST(req: NextRequest){
+  let id=''; try{ const b=await req.json(); id=String(b?.id||''); }catch{}
   return handle(id);
 }
-
-export async function GET(req: NextRequest) {
-  const id = String(req.nextUrl.searchParams.get('id') || '');
-  return handle(id);
+export async function GET(req: NextRequest){
+  return handle(String(req.nextUrl.searchParams.get('id')||''));
 }
