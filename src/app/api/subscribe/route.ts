@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
-      cache: 'no-store',
+      cache: 'no-store'
     });
     const j = await r.json().catch(() => ({ ok:false, error:'non_json_upstream' }));
     return NextResponse.json(j, { status: r.status });
