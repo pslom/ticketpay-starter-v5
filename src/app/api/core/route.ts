@@ -1,4 +1,4 @@
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = process.env.NODE_TLS_REJECT_UNAUTHORIZED || '0';
+if (process.env.ALLOW_SELF_SIGNED_TLS==='1') process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
