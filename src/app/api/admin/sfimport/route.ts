@@ -3,8 +3,9 @@ export const dynamic = 'force-dynamic';
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { getPool } from '../../../../lib/pg';
 
-function j(s:number,b:any){return new NextResponse(JSON.stringify(b),{status:s,headers:{'content-type':'application/json'}});}
+function j(s:number,b: unknown){return new NextResponse(JSON.stringify(b),{status:s,headers:{'content-type':'application/json'}});} 
 function readAdmin(req: NextRequest){ return req.headers.get('x-admin-token') || req.headers.get('authorization')?.replace(/^Bearer\s+/i,'') || ''; }
 
 async function fetchDataSF(sinceISO: string, plates: string[], appToken?: string) {
@@ -22,18 +23,22 @@ async function fetchDataSF(sinceISO: string, plates: string[], appToken?: string
   if (!r.ok) throw new Error(`DataSF ${r.status}`);
   const items = await r.json();
 
-  return (Array.isArray(items) ? items : []).map((raw:any) => ({
-    city: 'SF',
-    plate: String(raw.license_plate || raw.plate || '').trim(),
-    state: String((raw.state || raw.plate_state || '')).trim().toUpperCase().slice(0,2),
-    citation_number: String(raw.citation_number || raw.citation || raw.id || '').trim(),
-    status: String(raw.status || 'open'),
-    amount_cents: Math.round(Number(raw.fine_amount || raw.amount || 0) * 100),
-    issued_at: raw.issued_datetime || raw.issue_datetime || raw.issue_date || raw.issued_at,
-    location: raw.location || raw.blocklot || raw.blockface || raw.address || '',
-    violation: raw.violation_description || raw.violation || '',
-    source: 'datasf'
-  })).filter(x => x.plate && plates.includes(x.plate.toUpperCase()));
+  const arr = Array.isArray(items) ? items : [];
+  return arr.map((raw: unknown) => {
+    const r = (raw && typeof raw === 'object') ? (raw as Record<string, unknown>) : {};
+    return {
+      city: 'SF',
+      plate: String(r['license_plate'] || r['plate'] || '').trim(),
+      state: String((r['state'] || r['plate_state'] || '')).trim().toUpperCase().slice(0,2),
+      citation_number: String(r['citation_number'] || r['citation'] || r['id'] || '').trim(),
+      status: String(r['status'] || 'open'),
+      amount_cents: Math.round(Number(r['fine_amount'] || r['amount'] || 0) * 100),
+      issued_at: (r['issued_datetime'] || r['issue_datetime'] || r['issue_date'] || r['issued_at']),
+      location: r['location'] || r['blocklot'] || r['blockface'] || r['address'] || '',
+      violation: r['violation_description'] || r['violation'] || '',
+      source: 'datasf'
+    };
+  }).filter(x => x.plate && plates.includes(x.plate.toUpperCase()));
 }
 
 export async function GET(req: NextRequest) {
@@ -41,8 +46,7 @@ export async function GET(req: NextRequest) {
   if (!token || token !== (process.env.ADMIN_TOKEN||'')) return j(401,{ok:false,error:'unauthorized'});
 
   try {
-    const { Pool } = await import('pg');
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 1, ssl: { rejectUnauthorized: false }});
+    const pool = getPool();
     const client = await pool.connect();
     try {
       const { rows } = await client.query<{ plate_normalized: string }>(
@@ -66,8 +70,9 @@ export async function GET(req: NextRequest) {
       });
       const body = await res.json().catch(()=>({ ok:false, error:'non_json_upstream' }));
       return j(res.status, { ok: res.ok, upstream_status: res.status, body });
-    } finally { client.release(); await pool.end().catch(()=>{}); }
-  } catch (e:any) {
-    return j(500, { ok:false, error:'server_error', detail:String(e?.message||e) });
+    } finally { try { client.release(); } catch {} }
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return j(500, { ok:false, error:'server_error', detail: msg });
   }
 }

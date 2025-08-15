@@ -1,5 +1,8 @@
 "use client";
 import { useState } from "react";
+import Button from '@/components/Button';
+import { Input } from '@/components/Input';
+import { Card } from '@/components/Card';
 
 function formatCents(cents:number){return (cents/100).toLocaleString(undefined,{style:"currency",currency:"USD"});}
 
@@ -23,16 +26,28 @@ export default function Home(){
     catch{setMsg("Network error");} }
 
   return (
-    <main className="min-h-screen bg-white text-gray-900">
+    <main className="min-h-screen bg-bg text-text">
       <div className="mx-auto max-w-2xl px-6 py-10">
         <h1 className="text-3xl font-semibold tracking-tight">TicketPay</h1>
-        <p className="mt-2 text-sm text-gray-600">Look up SF parking citations and subscribe to alerts.</p>
+        <p className="mt-2 text-sm text-gray-c">Look up SF parking citations and subscribe to alerts.</p>
 
-        <form onSubmit={onLookup} className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-6">
-          <input className="sm:col-span-4 rounded-xl border px-3 py-2" placeholder="Plate (e.g., 7ABC123)" value={plate} onChange={e=>setPlate(e.target.value)} required />
-          <input className="sm:col-span-2 rounded-xl border px-3 py-2" placeholder="State" value={state} onChange={e=>setState(e.target.value.toUpperCase())} required maxLength={3} />
-          <button className="sm:col-span-6 rounded-xl bg-black px-4 py-2 text-white disabled:opacity-60" disabled={loading}>{loading?"Searching…":"Search"}</button>
-        </form>
+        <Card>
+          <form onSubmit={onLookup} className="grid grid-cols-1 gap-3 sm:grid-cols-6">
+            <div className="sm:col-span-4">
+              <label className="block text-sm">Plate</label>
+              <Input placeholder="Plate (e.g., 7ABC123)" value={plate} onChange={e=>setPlate(e.target.value)} required />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-sm">State</label>
+              <Input placeholder="State" value={state} onChange={e=>setState(e.target.value.toUpperCase())} required maxLength={3} className="uppercase" />
+            </div>
+
+            <div className="sm:col-span-6">
+              <Button type="submit" disabled={loading}>{loading?"Searching…":"Search"}</Button>
+            </div>
+          </form>
+        </Card>
 
         {msg && <div className="mt-4 rounded-xl border px-4 py-3 text-sm">{msg}</div>}
 
@@ -41,32 +56,44 @@ export default function Home(){
             <h2 className="text-lg font-medium">Results</h2>
             {tickets.length===0 && <div className="rounded-xl border px-4 py-3 text-sm">No tickets found.</div>}
             {tickets.map(t=> (
-              <div key={t.id} className="rounded-2xl border p-4">
+              <Card key={t.id}>
                 <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-600">{t.city}</div>
+                  <div className="text-sm text-gray-c">{t.city}</div>
                   <div className="text-sm uppercase">{t.status}</div>
                 </div>
                 <div className="mt-1 text-xl font-semibold">{t.citation_number}</div>
-                <div className="mt-2 grid grid-cols-2 gap-2 text-sm text-gray-700">
+                <div className="mt-2 grid grid-cols-2 gap-2 text-sm text-gray-c">
                   <div>Amount: {formatCents(t.amount_cents)}</div>
                   <div>Issued: {new Date(t.issued_at).toLocaleString()}</div>
                   <div className="col-span-2">Violation: {t.violation||"—"}</div>
                   <div className="col-span-2">Location: {t.location||"—"}</div>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         )}
 
-        <form onSubmit={onSubscribe} className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-6">
-          <h2 className="sm:col-span-6 text-lg font-medium">Subscribe to alerts</h2>
-          <select className="sm:col-span-2 rounded-xl border px-3 py-2" value={channel} onChange={e=>setChannel(e.target.value as any)}>
-            <option value="sms">SMS</option>
-            <option value="email">Email</option>
-          </select>
-          <input className="sm:col-span-4 rounded-xl border px-3 py-2" placeholder={channel==="sms"?"+14155551234":"you@example.com"} value={value} onChange={e=>setValue(e.target.value)} required />
-          <button className="sm:col-span-6 rounded-xl bg-black px-4 py-2 text-white">Subscribe</button>
-        </form>
+        <Card>
+          <form onSubmit={onSubscribe} className="grid grid-cols-1 gap-3 sm:grid-cols-6">
+            <h2 className="sm:col-span-6 text-lg font-medium">Subscribe to alerts</h2>
+            <div className="sm:col-span-2">
+              <label className="block text-sm">Channel</label>
+              <select className="h-12 w-full rounded-xl border px-4" value={channel} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setChannel(e.target.value as 'sms'|'email')}>
+                <option value="sms">SMS</option>
+                <option value="email">Email</option>
+              </select>
+            </div>
+
+            <div className="sm:col-span-4">
+              <label className="block text-sm">Destination</label>
+              <Input placeholder={channel==="sms"?"+14155551234":"you@example.com"} value={value} onChange={e=>setValue(e.target.value)} required />
+            </div>
+
+            <div className="sm:col-span-6">
+              <Button type="submit">Subscribe</Button>
+            </div>
+          </form>
+        </Card>
       </div>
     </main>
   );

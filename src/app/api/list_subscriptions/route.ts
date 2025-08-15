@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
-import { getPool } from "@/lib/db";
+import { getPool } from "@/lib/pg";
 import { listSchema } from "@/lib/validate";
 import { CITY_DEFAULT, normalizePlate, normalizeState } from "@/lib/normalizers";
-import { corsHeaders } from "@/lib/cors";
+import { corsHeaders } from "@/lib/response";
 
 export async function OPTIONS(req: NextRequest) {
   const origin = req.headers.get("origin") || undefined;

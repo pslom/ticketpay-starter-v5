@@ -1,15 +1,11 @@
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-if (process.env.ALLOW_SELF_SIGNED_TLS === '1') {
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-}
-
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { getPool } from '../../../lib/pg';
 
-function j(s:number,b:any){return new NextResponse(JSON.stringify(b),{status:s,headers:{'content-type':'application/json'}});}
+function j(s:number,b: unknown){return new NextResponse(JSON.stringify(b),{status:s,headers:{'content-type':'application/json'}});}
 
 function readAuth(req: NextRequest) {
   const hAuth = req.headers.get('authorization') || req.headers.get('Authorization') || '';
@@ -42,19 +38,22 @@ async function fetchDataSF(sinceISO: string, appToken?: string) {
   return Array.isArray(items) ? items : [];
 }
 
-function mapToSync(raw: any[]) {
-  return raw.map((r:any) => ({
-    city: 'SF',
-    plate: String(r.license_plate || r.plate || '').trim(),
-    state: String((r.state || r.plate_state || '')).trim().toUpperCase().slice(0,2),
-    citation_number: String(r.citation_number || r.citation || r.id || '').trim(),
-    status: String(r.status || 'open'),
-    amount_cents: Math.round(Number(r.fine_amount || r.amount || 0) * 100),
-    issued_at: r.issued_datetime || r.issue_datetime || r.issue_date || r.issued_at,
-    location: r.location || r.blocklot || r.blockface || r.address || '',
-    violation: r.violation_description || r.violation || '',
-    source: 'datasf'
-  }));
+function mapToSync(raw: unknown[]) {
+  return raw.map((r: unknown) => {
+    const obj = (r && typeof r === 'object') ? (r as Record<string, unknown>) : {};
+    return {
+      city: 'SF',
+      plate: String(obj['license_plate'] || obj['plate'] || '').trim(),
+      state: String((obj['state'] || obj['plate_state'] || '')).trim().toUpperCase().slice(0,2),
+      citation_number: String(obj['citation_number'] || obj['citation'] || obj['id'] || '').trim(),
+      status: String(obj['status'] || 'open'),
+      amount_cents: Math.round(Number(obj['fine_amount'] || obj['amount'] || 0) * 100),
+      issued_at: (obj['issued_datetime'] || obj['issue_datetime'] || obj['issue_date'] || obj['issued_at']),
+      location: obj['location'] || obj['blocklot'] || obj['blockface'] || obj['address'] || '',
+      violation: obj['violation_description'] || obj['violation'] || '',
+      source: 'datasf'
+    };
+  });
 }
 
 export async function GET(req: NextRequest) {
@@ -98,7 +97,8 @@ export async function GET(req: NextRequest) {
     const syncBody = await syncRes.json().catch(() => ({ ok:false, error:'non_json_upstream' }));
 
     return j(200, { ok:true, db, fetched: ds.length, matched: filtered.length, sync: { status: syncRes.status, body: syncBody } });
-  } catch (e:any) {
-    return j(500, { ok:false, error:'server_error', detail:String(e?.message||e) });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return j(500, { ok:false, error:'server_error', detail:String(msg) });
   }
 }

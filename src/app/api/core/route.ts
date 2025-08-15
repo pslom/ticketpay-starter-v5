@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server';
 import { limitPg } from '../../../lib/ratelimit-pg';
 import { getPool } from '../../../lib/pg';
 
-function json(status: number, body: any) {
+function json(status: number, body: unknown) {
   return new NextResponse(JSON.stringify(body), {
     status,
     headers: {
@@ -25,11 +25,7 @@ const BASE_URL = process.env.BASE_URL || 'https://www.ticketpay.us.com';
 function normalizePlate(raw: string) { return (raw || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
 function normalizeState(raw: string) { return (raw || '').toUpperCase().trim(); }
 
-type CoreBody =
-  | { op: 'lookup_ticket'; plate: string; state: string; city?: string }
-  | { op: 'subscribe'; plate: string; state: string; channel: 'email'|'sms'; value: string; city?: string }
-  | { op: 'list_subscriptions'; plate?: string; state?: string; value?: string; channel?: 'email'|'sms'; city?: string }
-  | { op: 'unsubscribe'; id: string };
+// CoreBody type intentionally omitted to avoid unused-type lint warnings; payload is validated inline.
 
 async function getClient() {
   const pool = getPool();
@@ -42,12 +38,13 @@ export async function POST(req: NextRequest) {
   const url = new URL(req.url);
   const pathKey = url.pathname.replace(/\W+/g, ':');
 
-  let body: CoreBody;
-  try { body = await req.json(); } catch { return json(400, { ok:false, error:'invalid_json' }); }
-  const op = (body as any)?.op;
+  let rawBody: unknown;
+  try { rawBody = await req.json(); } catch { return json(400, { ok:false, error:'invalid_json' }); }
+  const payload = (typeof rawBody === 'object' && rawBody !== null) ? (rawBody as Record<string, unknown>) : {};
+  const op = String(payload.op || '');
   if (!op) return json(400, { ok:false, error:'missing_op' });
 
-  const city = ((body as any).city || CITY_DEFAULT).toUpperCase();
+  const city = String(payload.city || CITY_DEFAULT).toUpperCase();
 
   let clientWrap;
   try {
@@ -59,8 +56,8 @@ export async function POST(req: NextRequest) {
       const gate = await limitPg(client, `${baseKey}:lookup`, 20, 60);
       if (!gate.ok) return json(429, { ok:false, error:'rate_limited', reset: gate.reset });
 
-      const plate = (body as any).plate || '';
-      const state = (body as any).state || '';
+      const plate = String(payload.plate || '');
+      const state = String(payload.state || '');
       const plateNorm = normalizePlate(plate);
       const stateNorm = normalizeState(state);
       if (!plateNorm || !stateNorm) return json(400, { ok:false, error:'validation_error', detail:{ plate, state } });
@@ -79,10 +76,10 @@ export async function POST(req: NextRequest) {
       const gate = await limitPg(client, `${baseKey}:subscribe`, 10, 60);
       if (!gate.ok) return json(429, { ok:false, error:'rate_limited', reset: gate.reset });
 
-      const plate = (body as any).plate || '';
-      const state = (body as any).state || '';
-      const channel = (body as any).channel as 'email'|'sms';
-      const value = ((body as any).value || '').trim();
+      const plate = String(payload.plate || '');
+      const state = String(payload.state || '');
+      const channel = String(payload.channel || '') as 'email'|'sms';
+      const value = String(payload.value || '').trim();
       const plateNorm = normalizePlate(plate);
       const stateNorm = normalizeState(state);
       if (!plateNorm || !stateNorm || !value || !['email','sms'].includes(channel)) {
@@ -112,16 +109,17 @@ export async function POST(req: NextRequest) {
       }
 
       try {
-        const { notify } = await import('../../../lib/notify');
+        const mod = await import('../../../lib/notify');
+        const notifier = (mod && typeof mod.createNotifier === 'function') ? mod.createNotifier() : null;
         const manage = `${BASE_URL}/manage`;
         const unsub  = `${BASE_URL}/unsubscribe/${id}`;
         const text = `TicketPay: subscribed to ${plateNorm}/${stateNorm} (${city}). Manage: ${manage} — Unsubscribe: ${unsub}`;
-        if ((process.env.SENDGRID_API_KEY && process.env.SENDGRID_FROM) && channel === 'email') {
-          notify({ channel:'email', to: value, subject:'TicketPay subscription', text,
+        if ((process.env.SENDGRID_API_KEY && process.env.SENDGRID_FROM) && channel === 'email' && notifier) {
+          notifier.notify({ channel:'email', to: value, subject:'TicketPay subscription', text,
                    html: `<p>${text}</p><p><a href="${unsub}">Unsubscribe</a></p>` }).catch(()=>{});
         }
-        if ((process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_FROM) && channel === 'sms') {
-          notify({ channel:'sms', to: value, text }).catch(()=>{});
+        if ((process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_FROM) && channel === 'sms' && notifier) {
+          notifier.notify({ channel:'sms', to: value, text }).catch(()=>{});
         }
       } catch {}
 
@@ -132,10 +130,10 @@ export async function POST(req: NextRequest) {
       const gate = await limitPg(client, `${baseKey}:list`, 20, 60);
       if (!gate.ok) return json(429, { ok:false, error:'rate_limited', reset: gate.reset });
 
-      const plate = (body as any).plate || '';
-      const state = (body as any).state || '';
-      const value = ((body as any).value || '').trim();
-      const channel = (body as any).channel as ('email'|'sms'|undefined);
+      const plate = String(payload.plate || '');
+      const state = String(payload.state || '');
+      const value = String(payload.value || '').trim();
+      const channel = String(payload.channel || '') as ('email'|'sms'|undefined);
 
       let r;
       if (value) {
@@ -156,16 +154,19 @@ export async function POST(req: NextRequest) {
     }
 
     if (op === 'unsubscribe') {
-      const id = (body as any).id || '';
+      const id = String(payload.id || '');
       if (!id) return json(400, { ok:false, error:'validation_error', detail:{ id } });
+
+      const gate = await limitPg(client, `${baseKey}:unsubscribe`, 5, 60);
+      if (!gate.ok) return json(429, { ok:false, error:'rate_limited', reset: gate.reset });
 
       const r = await client.query(`DELETE FROM public.subscriptions WHERE id=$1 RETURNING id`, [id]);
       return json(200, { ok:true, removed: r.rowCount || 0 });
     }
 
     return json(400, { ok:false, error:'unknown_op', got: op });
-  } catch (e:any) {
-    const msg = String(e?.message||e);
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
     if (msg.includes('env_missing_DATABASE_URL')) return json(500, { ok:false, error:'env_missing_DATABASE_URL' });
     if (msg.includes('relation') && msg.includes('does not exist')) return json(500, { ok:false, error:'schema_missing', detail: msg });
     return json(500, { ok:false, error:'server_error', detail: msg });

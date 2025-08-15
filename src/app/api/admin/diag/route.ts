@@ -1,6 +1,6 @@
 export const runtime = 'nodejs';
 import type { NextRequest } from 'next/server';
-import { getPool } from '@/lib/db';
+import { getPool } from '@/lib/pg';
 
 export async function POST(req: NextRequest) {
   const auth = req.headers.get('authorization') || '';
@@ -17,13 +17,8 @@ export async function POST(req: NextRequest) {
       db_host: process.env.DATABASE_URL ? new URL(process.env.DATABASE_URL).host : null
     });
   } catch (e: unknown) {
-    const err = e as { message?: string; code?: any; detail?: any; stack?: any };
-    console.error('ADMIN_DIAG_ERROR', {
-      message: err?.message,
-      code: err?.code,
-      detail: err?.detail,
-      stack: err?.stack,
-    });
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('ADMIN_DIAG_ERROR', { message: msg });
     return Response.json({ ok:false, error:'server_error' }, { status: 500 });
   }
 }

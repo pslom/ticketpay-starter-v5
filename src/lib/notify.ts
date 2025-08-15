@@ -1,15 +1,22 @@
-type NotifyParams = { channel:'email'|'sms'; to:string; subject?:string; text:string; html?:string };
+type NotifyParams = { channel: 'email' | 'sms'; to: string; subject?: string; text: string; html?: string };
 
-export async function notify(p: NotifyParams) {
-  if (p.channel === 'email') return sendEmail(p.to, p.subject || 'TicketPay alert', p.text, p.html);
-  if (p.channel === 'sms')   return sendSMS(p.to, p.text);
-  return { ok:false, skipped:true, reason:'unknown_channel' };
+export type Notifier = {
+  notify: (p: NotifyParams) => Promise<{ ok: boolean; status?: number; skipped?: boolean; reason?: string }>
+}
+
+export function createNotifier(): Notifier {
+  async function notify(p: NotifyParams) {
+    if (p.channel === 'email') return sendEmail(p.to, p.subject || 'TicketPay alert', p.text, p.html);
+    if (p.channel === 'sms') return sendSMS(p.to, p.text);
+    return { ok: false, skipped: true, reason: 'unknown_channel' };
+  }
+  return { notify };
 }
 
 async function sendEmail(to: string, subject: string, text: string, html?: string) {
   const key = process.env.SENDGRID_API_KEY;
   const from = process.env.SENDGRID_FROM;
-  if (!key || !from) return { ok:false, skipped:true, reason:'sendgrid_env_missing' };
+  if (!key || !from) return { ok: false, skipped: true, reason: 'sendgrid_env_missing' };
 
   const body = {
     personalizations: [{ to: [{ email: to }] }],
@@ -29,7 +36,7 @@ async function sendSMS(to: string, body: string) {
   const sid = process.env.TWILIO_ACCOUNT_SID;
   const token = process.env.TWILIO_AUTH_TOKEN;
   const from = process.env.TWILIO_FROM;
-  if (!sid || !token || !from) return { ok:false, skipped:true, reason:'twilio_env_missing' };
+  if (!sid || !token || !from) return { ok: false, skipped: true, reason: 'twilio_env_missing' };
 
   const form = new URLSearchParams({ To: to, From: from, Body: body });
   const r = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
@@ -41,6 +48,5 @@ async function sendSMS(to: string, body: string) {
   return { ok: r.status >= 200 && r.status < 300, status: r.status };
 }
 
-/** Export named functions to satisfy existing imports in /api/subscribe */
 export { sendEmail };
-export { sendSMS as sendSms };
+export { sendSMS };

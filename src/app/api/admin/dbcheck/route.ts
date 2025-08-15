@@ -1,54 +1,34 @@
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
-
-function j(status: number, body: any) {
-  return new NextResponse(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' }
-  });
-}
-
-function readToken(req: NextRequest): string {
-  const q = req.nextUrl.searchParams.get('token')?.trim() || '';
-  const h1 = req.headers.get('authorization') || req.headers.get('Authorization') || '';
-  const bearer = h1.toLowerCase().startsWith('bearer ') ? h1.slice(7).trim() : '';
-  const h2 = req.headers.get('x-admin-token')?.trim() || '';
-  return bearer || h2 || q || '';
-}
+import { NextRequest } from 'next/server';
+import { getPool } from '../../../../lib/pg';
+import { j } from '../../../../lib/response';
+import { readAdminToken } from '../../../../lib/auth';
 
 export async function GET(req: NextRequest) {
-  // turn off TLS verification only inside the handler
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+  const token = readAdminToken(req);
+  if (!process.env.ADMIN_TOKEN) return j(req, 500, { ok:false, error:'env_missing_ADMIN_TOKEN' });
+  if (!token || token !== process.env.ADMIN_TOKEN) return j(req, 401, { ok:false, error:'unauthorized' });
+  if (!process.env.DATABASE_URL) return j(req, 500, { ok:false, error:'env_missing_DATABASE_URL' });
 
-  if (!process.env.ADMIN_TOKEN) return j(500, { ok:false, error:'env_missing_ADMIN_TOKEN' });
-  const token = readToken(req);
-  if (token !== process.env.ADMIN_TOKEN) return j(401, { ok:false, error:'unauthorized' });
-  if (!process.env.DATABASE_URL) return j(500, { ok:false, error:'env_missing_DATABASE_URL' });
-
+  const pool = getPool();
+  const client = await pool.connect();
   try {
-    const { Pool } = await import('pg');
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized:false }, max: 2 });
-    const client = await pool.connect();
-    try {
-      const ping = await client.query('select 1 as one');
-      const hasCitations = await client.query("select to_regclass('public.citations') as tbl");
-      const hasSubs = await client.query("select to_regclass('public.subscriptions') as tbl");
-      return j(200, {
-        ok: true,
-        db: 'online',
-        ping: ping.rows[0].one,
-        citations: hasCitations.rows[0].tbl,
-        subscriptions: hasSubs.rows[0].tbl
-      });
-    } finally {
-      try { client.release(); } catch {}
-      try { await pool.end(); } catch {}
-    }
-  } catch (e:any) {
-    console.error('DBCHECK_ERROR', e?.message || e);
-    return j(500, { ok:false, error:'db_error', detail: String(e?.message||e) });
+    const ping = await client.query('select 1 as one');
+    const hasCitations = await client.query("select to_regclass('public.citations') as tbl");
+    const hasSubs = await client.query("select to_regclass('public.subscriptions') as tbl");
+    return j(req, 200, {
+      ok: true,
+      db: 'online',
+      ping: ping.rows[0].one,
+      citations: hasCitations.rows[0].tbl,
+      subscriptions: hasSubs.rows[0].tbl
+    });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return j(req, 500, { ok:false, error:'db_error', detail: msg });
+  } finally {
+    try { client.release(); } catch {}
   }
 }

@@ -1,0 +1,38 @@
+name: Smoke test
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install
+        run: npm ci
+
+      - name: Smoke test /whoami
+        run: |
+          set -euo pipefail
+          echo "Testing /api/whoami"
+          curl -sS -f ${{ env.BASE_URL }}/api/whoami | jq .
+        env:
+          BASE_URL: ${{ secrets.BASE_URL }}
+
+      - name: Smoke test /admin/dbcheck
+        run: |
+          set -euo pipefail
+          echo "Testing /api/admin/dbcheck"
+          curl -sS -f -H "authorization: Bearer ${{ secrets.ADMIN_TOKEN }}" ${{ env.BASE_URL }}/api/admin/dbcheck | jq .
+        env:
+          BASE_URL: ${{ secrets.BASE_URL }}
+        # ADMIN_TOKEN must be set in repository secrets

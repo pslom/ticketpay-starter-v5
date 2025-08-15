@@ -2,32 +2,12 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
 import { getPool } from '../../../lib/pg';
+import { j, corsHeaders } from '../../../lib/response';
+import { z } from 'zod';
 
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const ORIGINS = [
-  'https://www.ticketpay.us.com',
-  'https://ticketpay.us.com',
-  'http://localhost:3000',
-  'http://localhost:3010'
-];
-
-function corsHeaders(req: NextRequest) {
-  const origin = req.headers.get('origin') || '';
-  const allow = ORIGINS.includes(origin) ? origin : 'https://ticketpay.us.com';
-  return {
-    'content-type':'application/json',
-    'x-unsub-ver':'v5',
-    'access-control-allow-origin': allow,
-    'access-control-allow-headers':'content-type, authorization',
-    'access-control-allow-methods':'OPTIONS, GET, POST',
-    'access-control-max-age':'86400'
-  } as Record<string,string>;
-}
-function j(req: NextRequest, status: number, body: any) {
-  return new NextResponse(JSON.stringify(body), { status, headers: corsHeaders(req) });
-}
+const bodySchema = z.object({ id: z.string().optional().nullable() });
 
 async function handle(req: NextRequest, id: string) {
   try {
@@ -41,11 +21,22 @@ async function handle(req: NextRequest, id: string) {
       const r = await client.query('DELETE FROM public.subscriptions WHERE id=$1::uuid RETURNING id', [safe]);
       return j(req, 200, { ok:true, removed: r.rowCount || 0 });
     } finally { client.release(); }
-  } catch (e:any) {
-    return j(req, 500, { ok:false, error:'server_error', detail:String(e?.message||e) });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return j(req, 500, { ok:false, error:'server_error', detail: msg });
   }
 }
 
-export async function OPTIONS(req: NextRequest) { return j(req, 204, {}); }
+export async function OPTIONS(req: NextRequest) { return new Response(null, { status: 204, headers: corsHeaders(req.headers.get('origin') || undefined) }); }
 export async function GET(req: NextRequest) { return handle(req, String(req.nextUrl.searchParams.get('id')||'')); }
-export async function POST(req: NextRequest) { let id=''; try { const b=await req.json(); id=String(b?.id||''); } catch {} return handle(req, id); }
+export async function POST(req: NextRequest) {
+  let id = '';
+  try {
+    const raw = await req.text();
+    let parsed: unknown = {};
+    try { parsed = raw ? JSON.parse(raw) : {}; } catch {}
+    const res = bodySchema.safeParse(parsed);
+    if (res.success) id = String(res.data.id || '');
+  } catch { /* ignore */ }
+  return handle(req, id);
+}
