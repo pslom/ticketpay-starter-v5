@@ -18,7 +18,7 @@ function corsHeaders(req: NextRequest) {
   const allow = ORIGINS.includes(origin) ? origin : 'https://ticketpay.us.com';
   return {
     'content-type':'application/json',
-    'x-unsub-ver':'v4',
+    'x-unsub-ver':'v5',
     'access-control-allow-origin': allow,
     'access-control-allow-headers':'content-type, authorization',
     'access-control-allow-methods':'OPTIONS, GET, POST',
@@ -47,5 +47,5 @@ async function handle(req: NextRequest, id: string) {
 }
 
 export async function OPTIONS(req: NextRequest) { return j(req, 204, {}); }
-export async function POST(req: NextRequest) { let id=''; try { const b=await req.json(); id=String(b?.id||''); } catch {} return handle(req, id); }
 export async function GET(req: NextRequest) { return handle(req, String(req.nextUrl.searchParams.get('id')||'')); }
+export async function POST(req: NextRequest) { let id=''; try { const b=await req.json(); id=String(b?.id||''); } catch {} return handle(req, id); }
