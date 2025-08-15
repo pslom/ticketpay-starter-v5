@@ -9,7 +9,7 @@ export default function Page({ params }: { params: { id: string } }) {
   useEffect(() => {
     const run = async () => {
       try {
-        const r = await fetch('/api/unsubscribe', {
+        const r = await fetch('/api/unsub', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ id: params.id }),
@@ -19,8 +19,7 @@ export default function Page({ params }: { params: { id: string } }) {
         if (r.ok && j?.ok) setState('ok');
         else { setState('err'); setDetail(j?.error || `HTTP ${r.status}`); }
       } catch (e: any) {
-        setState('err');
-        setDetail(String(e?.message || e));
+        setState('err'); setDetail(String(e?.message || e));
       }
     };
     run();
