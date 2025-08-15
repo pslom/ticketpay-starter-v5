@@ -42,3 +42,5 @@ next-env.d.ts
 sendgrid.env
 sendgrid.env
 .env.local
+
+supabase-ca.pem
