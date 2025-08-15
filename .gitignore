@@ -51,3 +51,4 @@ supabase-ca.pem
 *.cer
 supabase-ca.pem
 .env.local
+.env.local.bak
