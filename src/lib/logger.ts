@@ -30,7 +30,6 @@ export async function initSentry() {
   if (!dsn) return;
   try {
     // dynamic import so missing @sentry/node is non-fatal
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const Sentry = await import('@sentry/node');
     Sentry.init({ dsn, tracesSampleRate: 0.1 });
     info('sentry: initialized');

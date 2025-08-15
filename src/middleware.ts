@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import { Redis } from '@upstash/redis';
 import { Ratelimit } from '@upstash/ratelimit';
 
@@ -12,8 +12,9 @@ const ratelimit = redis ? new Ratelimit({ redis, limiter: Ratelimit.fixedWindow(
 
 const fallbackHits = new Map<string,{count:number,ts:number}>();
 
-export async function middleware(req: Request) {
+export async function middleware(req: NextRequest) {
   const url = new URL(req.url);
+
   const want = process.env.CANONICAL_HOST || 'www.ticketpay.us.com';
 
   if (process.env.NODE_ENV === 'production' && url.hostname.toLowerCase() !== want) {
@@ -23,7 +24,7 @@ export async function middleware(req: Request) {
   }
 
   if (url.pathname.startsWith('/api/')) {
-    const ip = (req.headers as Headers).get('x-forwarded-for')?.split(',')[0]?.trim() || (req.headers as Headers).get('x-real-ip') || 'local';
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'local';
     if (ratelimit) {
       const res = await ratelimit.limit(ip);
       if (!res.success) return new Response('Rate limit', { status: 429 });
