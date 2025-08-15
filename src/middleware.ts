@@ -8,8 +8,10 @@ export function middleware(req: Request) {
   const url = new URL(req.url);
   const want = 'www.ticketpay.us.com';
 
-  if (process.env.NODE_ENV === 'production' && url.host.toLowerCase() !== want) {
-    url.host = want;
+  if (process.env.NODE_ENV === 'production' && url.hostname.toLowerCase() !== want) {
+    // ensure we redirect to canonical host (hostname only) and drop any port
+    url.hostname = want;
+    url.port = '';
     return NextResponse.redirect(url, 308);
   }
 
