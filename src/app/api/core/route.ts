@@ -1,9 +1,10 @@
-import '../_tls';
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = process.env.NODE_TLS_REJECT_UNAUTHORIZED || '0';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { limit } from '../../../lib/ratelimit';
 
 function json(status: number, body: any) {
   return new NextResponse(JSON.stringify(body), {
@@ -36,7 +37,7 @@ async function getClient() {
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     max: 3,
-    ssl: { rejectUnauthorized: false }, // fix: supabase tls chain
+    ssl: { rejectUnauthorized: false },
   });
   const client = await pool.connect();
   return {
@@ -49,6 +50,12 @@ async function getClient() {
 }
 
 export async function POST(req: NextRequest) {
+  // simple per-IP rate limits
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  const url = new URL(req.url);
+  const pathKey = url.pathname.replace(/\W+/g, ':');
+  const baseKey = `rl:${pathKey}:${ip}`;
+
   let body: CoreBody;
   try { body = await req.json(); } catch { return json(400, { ok:false, error:'invalid_json' }); }
   const op = (body as any)?.op;
@@ -57,6 +64,9 @@ export async function POST(req: NextRequest) {
   const city = ((body as any).city || CITY_DEFAULT).toUpperCase();
 
   if (op === 'lookup_ticket') {
+    const gate = await limit(`${baseKey}:lookup`, 20, 60);
+    if (!gate.ok) return json(429, { ok:false, error:'rate_limited', reset: gate.reset });
+
     const plate = (body as any).plate || '';
     const state = (body as any).state || '';
     const plateNorm = normalizePlate(plate);
@@ -84,6 +94,9 @@ export async function POST(req: NextRequest) {
   }
 
   if (op === 'subscribe') {
+    const gate = await limit(`${baseKey}:subscribe`, 10, 60);
+    if (!gate.ok) return json(429, { ok:false, error:'rate_limited', reset: gate.reset });
+
     const plate = (body as any).plate || '';
     const state = (body as any).state || '';
     const channel = (body as any).channel as 'email'|'sms';
@@ -97,7 +110,7 @@ export async function POST(req: NextRequest) {
     try {
       const { client, done } = await getClient();
       try {
-        // 1) Try insert
+        // Insert or dedupe
         const ins = await client.query(
           `INSERT INTO public.subscriptions
            (plate, plate_normalized, state, channel, value, city)
@@ -110,7 +123,6 @@ export async function POST(req: NextRequest) {
         let id = ins.rows[0]?.id as string|undefined;
         let deduped = false;
 
-        // 2) If deduped, look up existing id
         if (!id) {
           deduped = true;
           const sel = await client.query(
@@ -122,13 +134,12 @@ export async function POST(req: NextRequest) {
           id = sel.rows[0]?.id;
         }
 
-        // 3) Fire-and-forget confirmation (if envs present)
+        // Fire-and-forget confirmation
         try {
           const { notify } = await import('../../../lib/notify');
           const manage = `${BASE_URL}/manage`;
           const unsub  = `${BASE_URL}/unsubscribe/${id}`;
-          const text =
-            `TicketPay: subscribed to ${plateNorm}/${stateNorm} (${city}). Manage: ${manage} — Unsubscribe: ${unsub}`;
+          const text = `TicketPay: subscribed to ${plateNorm}/${stateNorm} (${city}). Manage: ${manage} — Unsubscribe: ${unsub}`;
           if ((process.env.SENDGRID_API_KEY && process.env.SENDGRID_FROM) && channel === 'email') {
             notify({ channel:'email', to: value, subject:'TicketPay subscription', text,
                      html: `<p>${text}</p><p><a href="${unsub}">Unsubscribe</a></p>` }).catch(()=>{});
@@ -148,6 +159,9 @@ export async function POST(req: NextRequest) {
   }
 
   if (op === 'list_subscriptions') {
+    const gate = await limit(`${baseKey}:list`, 20, 60);
+    if (!gate.ok) return json(429, { ok:false, error:'rate_limited', reset: gate.reset });
+
     const plate = (body as any).plate || '';
     const state = (body as any).state || '';
     const value = ((body as any).value || '').trim();
