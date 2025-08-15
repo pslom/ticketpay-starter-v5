@@ -1,41 +1,74 @@
-import { NextRequest } from "next/server";
-import { getPool } from "@/lib/pg";
-import { lookupSchema } from "@/lib/validate";
-import { CITY_DEFAULT, normalizePlate, normalizeState } from "@/lib/normalizers";
-import { corsHeaders } from "@/lib/response";
+export const dynamic = "force-dynamic";
 
-export async function OPTIONS(req: NextRequest) {
-  const origin = req.headers.get("origin") || undefined;
-  return new Response(null, { status: 204, headers: corsHeaders(origin) });
+type Ticket = {
+  citation_no: string;
+  plate: string;
+  state: string;
+  amount_cents: number;
+  status: "open" | "paid" | "void";
+  violation?: string;
+  location?: string;
+  issued_at?: string;
+  due_at?: string;
+};
+
+const MOCK: Record<string, Ticket[]> = {
+  "CA|7ABC123": [
+    {
+      citation_no: "SF-10001",
+      plate: "7ABC123",
+      state: "CA",
+      amount_cents: 6500,
+      status: "open",
+      violation: "No Parking 7–9AM",
+      location: "Mission & 16th",
+      issued_at: new Date(Date.now() - 2 * 864e5).toISOString(),
+      due_at: new Date(Date.now() + 12 * 864e5).toISOString(),
+    },
+    {
+      citation_no: "SF-10002",
+      plate: "7ABC123",
+      state: "CA",
+      amount_cents: 8200,
+      status: "open",
+      violation: "Expired Meter",
+      location: "3rd & Folsom",
+      issued_at: new Date(Date.now() - 1 * 864e5).toISOString(),
+      due_at: new Date(Date.now() + 13 * 864e5).toISOString(),
+    },
+    {
+      citation_no: "SF-10003",
+      plate: "7ABC123",
+      state: "CA",
+      amount_cents: 9800,
+      status: "open",
+      violation: "Street Cleaning",
+      location: "Valencia & 19th",
+      issued_at: new Date(Date.now() - 5 * 864e5).toISOString(),
+      due_at: new Date(Date.now() + 9 * 864e5).toISOString(),
+    },
+  ],
+};
+
+function normPlate(s: string) {
+  return (s || "").toUpperCase().replace(/\s+/g, "");
+}
+function normState(s: string) {
+  return (s || "").toUpperCase().trim();
 }
 
-export async function POST(req: NextRequest) {
-  const origin = req.headers.get("origin") || undefined;
+export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const parsed = lookupSchema.safeParse(body);
-    if (!parsed.success) {
-      return Response.json(
-        { ok: false, error: "invalid_input" },
-        { status: 400, headers: corsHeaders(origin) }
-      );
+    const body = await req.json().catch(() => ({}));
+    const plate = normPlate(body.plate);
+    const state = normState(body.state);
+    if (!/^[A-Z0-9]{2,10}$/.test(plate) || !/^[A-Z]{2,3}$/.test(state)) {
+      return Response.json({ ok: false, error: "Invalid plate/state." }, { status: 400 });
     }
-    const { plate, state, city } = parsed.data;
-    const plateNorm = normalizePlate(plate);
-    const stateNorm = normalizeState(state);
-    const cityUse = (city || CITY_DEFAULT).toUpperCase();
-
-    const pool = getPool();
-    const { rows } = await pool.query(
-      "SELECT id, citation_number, status, amount_cents, issued_at, location, violation, city FROM citations WHERE plate_normalized = $1 AND state = $2 AND city = $3 ORDER BY issued_at DESC",
-      [plateNorm, stateNorm, cityUse]
-    );
-
-    return Response.json({ ok: true, tickets: rows }, { headers: corsHeaders(origin) });
+    const key = `${state}|${plate}`;
+    const tickets = MOCK[key] ?? [];
+    return Response.json({ ok: true, tickets }, { status: 200 });
   } catch {
-    return Response.json(
-      { ok: false, error: "server_error" },
-      { status: 500, headers: corsHeaders(origin) }
-    );
+    return Response.json({ ok: false, error: "Lookup temporarily unavailable." }, { status: 500 });
   }
 }

@@ -1,29 +1,6 @@
 @import "tailwindcss";
+@source "./src";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* App base */
-:root {
-  --app-bg: #FFFFFF; /* matches tailwind.config.ts colors.bg */
-  --app-text: #0A0A0A; /* matches tailwind.config.ts colors.text */
-  color-scheme: light;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --app-bg: #0a0a0a;
-    --app-text: #ededed;
-  }
-}
-
-html, body {
-  background-color: var(--app-bg);
-  color: var(--app-text);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-}
+/* basic base styles */
+:root { color-scheme: light; }
+html, body { margin: 0; padding: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
