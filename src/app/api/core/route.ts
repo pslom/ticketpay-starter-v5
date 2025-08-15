@@ -36,10 +36,7 @@ async function getClient() {
   const client = await pool.connect();
   return {
     client,
-    async done() {
-      try { client.release(); } catch {}
-      try { await pool.end(); } catch {}
-    }
+    async done() { try { client.release(); } finally { try { await pool.end(); } catch {} } }
   };
 }
 
@@ -98,12 +95,14 @@ export async function POST(req: NextRequest) {
            VALUES ($1,$2,$3,$4,$5,$6)
            ON CONFLICT (plate_normalized, state, channel, value, city)
            DO UPDATE SET value = EXCLUDED.value
-           RETURNING id`,
+           RETURNING id, (xmax = 0) AS inserted`,
           [plate, plateNorm, stateNorm, channel, value, city]
         );
         const id = ins.rows[0]?.id;
+        const inserted = !!ins.rows[0]?.inserted;
+        const deduped = !inserted;
 
-        // Fire-and-forget confirmation if envs present
+        // Fire-and-forget confirmation (if envs present)
         try {
           const { notify } = await import('../../../lib/notify');
           const manage = `${BASE_URL}/manage`;
@@ -119,7 +118,7 @@ export async function POST(req: NextRequest) {
           }
         } catch {}
 
-        return json(200, { ok:true, id, manage_url: `${BASE_URL}/manage` });
+        return json(200, { ok:true, id, manage_url: `${BASE_URL}/manage`, deduped });
       } finally { await done(); }
     } catch (e:any) {
       const msg = String(e?.message||e);
