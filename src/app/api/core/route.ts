@@ -1,10 +1,10 @@
-if (process.env.ALLOW_SELF_SIGNED_TLS==='1') process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { limitPg } from '../../../lib/ratelimit-pg';
+import { getPool } from '../../../lib/pg';
 
 function json(status: number, body: any) {
   return new NextResponse(JSON.stringify(body), {
@@ -32,21 +32,9 @@ type CoreBody =
   | { op: 'unsubscribe'; id: string };
 
 async function getClient() {
-  if (!process.env.DATABASE_URL) throw new Error('env_missing_DATABASE_URL');
-  const { Pool } = await import('pg');
-  const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    max: 3,
-    ssl: { rejectUnauthorized: false },
-  });
+  const pool = getPool();
   const client = await pool.connect();
-  return {
-    client,
-    async done() {
-      try { client.release(); } catch {}
-      try { await pool.end(); } catch {}
-    }
-  };
+  return { client, async done() { try { client.release(); } catch {} } };
 }
 
 export async function POST(req: NextRequest) {
@@ -61,7 +49,6 @@ export async function POST(req: NextRequest) {
 
   const city = ((body as any).city || CITY_DEFAULT).toUpperCase();
 
-  // One DB connection per request, shared across ops + rate limit
   let clientWrap;
   try {
     clientWrap = await getClient();
@@ -102,7 +89,6 @@ export async function POST(req: NextRequest) {
         return json(400, { ok:false, error:'validation_error', detail:{ plate, state, channel, value } });
       }
 
-      // Insert or dedupe
       const ins = await client.query(
         `INSERT INTO public.subscriptions
          (plate, plate_normalized, state, channel, value, city)
@@ -125,7 +111,6 @@ export async function POST(req: NextRequest) {
         id = sel.rows[0]?.id;
       }
 
-      // Fire-and-forget confirmation
       try {
         const { notify } = await import('../../../lib/notify');
         const manage = `${BASE_URL}/manage`;
