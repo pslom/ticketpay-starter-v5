@@ -1,29 +1,30 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
 
-export default function UnsubPage() {
-  const params = useParams<{ id: string | string[] }>();
-  const id = Array.isArray(params.id) ? params.id[0] : params.id;
+import { useEffect, useState } from 'react';
+
+export default function Page({ params }: { params: { id: string } }) {
   const [state, setState] = useState<'idle'|'ok'|'err'>('idle');
-  const [detail, setDetail] = useState<string>('');
+  const [detail, setDetail] = useState('');
 
   useEffect(() => {
-    if (!id) return;
     const run = async () => {
       try {
-        const r = await fetch('/api/core', {
+        const r = await fetch('/api/unsubscribe', {
           method: 'POST',
-          headers: { 'content-type':'application/json' },
-          body: JSON.stringify({ op:'unsubscribe', id }),
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ id: params.id }),
+          cache: 'no-store'
         });
-        const j = await r.json().catch(() => ({}));
-        if (j?.ok) setState('ok');
-        else { setState('err'); setDetail(j?.error || 'unknown_error'); }
-      } catch (e:any) { setState('err'); setDetail(String(e?.message||e)); }
+        const j = await r.json().catch(() => ({} as any));
+        if (r.ok && j?.ok) setState('ok');
+        else { setState('err'); setDetail(j?.error || `HTTP ${r.status}`); }
+      } catch (e: any) {
+        setState('err');
+        setDetail(String(e?.message || e));
+      }
     };
     run();
-  }, [id]);
+  }, [params.id]);
 
   return (
     <main className="mx-auto max-w-xl p-6">
@@ -38,7 +39,7 @@ export default function UnsubPage() {
       {state === 'err' && (
         <div className="rounded-2xl p-4 shadow bg-white">
           <h2 className="text-xl font-medium mb-2">Unsubscribe error</h2>
-          <p className="text-red-600 text-sm break-words">{detail}</p>
+          <p className="text-red-600 text-sm break-words">{detail || 'server_error'}</p>
         </div>
       )}
     </main>

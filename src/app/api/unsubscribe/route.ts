@@ -1,34 +1,53 @@
-import { NextRequest } from "next/server";
-import { getPool } from "@/lib/db";
-import { unsubscribeSchema } from "@/lib/validate";
-import { corsHeaders } from "@/lib/cors";
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-export async function OPTIONS(req: NextRequest) {
-  const origin = req.headers.get("origin") || undefined;
-  return new Response(null, { status: 204, headers: corsHeaders(origin) });
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+import { getPool } from '../../../lib/pg';
+
+function j(s:number,b:any){
+  return new NextResponse(JSON.stringify(b), {
+    status:s,
+    headers:{
+      'content-type':'application/json',
+      'access-control-allow-origin':'https://www.ticketpay.us.com, https://ticketpay.us.com, http://localhost:3000, http://localhost:3010',
+      'access-control-allow-headers':'content-type, authorization',
+      'access-control-allow-methods':'OPTIONS, GET, POST',
+    }
+  });
+}
+export async function OPTIONS(){ return j(204,{}); }
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+async function handle(id: string) {
+  try {
+    const safe = String(id || '').trim();
+    if (!UUID_RE.test(safe)) return j(200, { ok:true, removed:0 }); // treat as already-unsubscribed
+
+    const pool = getPool();
+    const client = await pool.connect();
+    try {
+      const r = await client.query(
+        'DELETE FROM public.subscriptions WHERE id=$1::uuid RETURNING id',
+        [safe]
+      );
+      return j(200, { ok:true, removed: r.rowCount || 0 });
+    } finally {
+      client.release();
+    }
+  } catch (e:any) {
+    return j(500, { ok:false, error:'server_error', detail:String(e?.message||e) });
+  }
 }
 
 export async function POST(req: NextRequest) {
-  const origin = req.headers.get("origin") || undefined;
-  try {
-    const body = await req.json();
-    const parsed = unsubscribeSchema.safeParse(body);
-    if (!parsed.success) {
-      return Response.json(
-        { ok: false, error: "invalid_input" },
-        { status: 400, headers: corsHeaders(origin) }
-      );
-    }
-    const { subscription_id } = parsed.data;
+  let id = '';
+  try { const body = await req.json(); id = String(body?.id || ''); } catch {}
+  return handle(id);
+}
 
-    const pool = getPool();
-    const result = await pool.query("DELETE FROM subscriptions WHERE id = $1", [subscription_id]);
-
-    return Response.json({ ok: true, deleted: result.rowCount }, { headers: corsHeaders(origin) });
-  } catch {
-    return Response.json(
-      { ok: false, error: "server_error" },
-      { status: 500, headers: corsHeaders(origin) }
-    );
-  }
+export async function GET(req: NextRequest) {
+  const id = String(req.nextUrl.searchParams.get('id') || '');
+  return handle(id);
 }
