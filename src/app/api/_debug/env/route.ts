@@ -1,5 +1,4 @@
 export const runtime = "nodejs";
-
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const token = url.searchParams.get("token") || "";
@@ -16,7 +15,6 @@ export async function GET(req: Request) {
         EMAIL_FROM_NAME: process.env.EMAIL_FROM_NAME,
         EMAIL_REPLY_TO_ADDRESS: process.env.EMAIL_REPLY_TO_ADDRESS,
         EMAIL_TO_OVERRIDE: process.env.EMAIL_TO_OVERRIDE,
-        // sanity
         key_preview: redact(process.env.SENDGRID_API_KEY || ""),
       },
     }),
