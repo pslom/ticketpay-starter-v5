@@ -2,12 +2,13 @@ import sgMail from "@sendgrid/mail";
 
 const RAW = process.env.SENDGRID_API_KEY || "";
 const KEY = RAW.trim();
-const FROM_EMAIL = process.env.EMAIL_FROM_ADDRESS || "info@ticketpay.us.com";
-const FROM_NAME = process.env.EMAIL_FROM_NAME || "TicketPay";
-const REPLY_EMAIL = process.env.EMAIL_REPLY_TO_ADDRESS || FROM_EMAIL;
-const TO_OVERRIDE = process.env.EMAIL_TO_OVERRIDE || "info@ticketpay.us.com";
-
 if (KEY) sgMail.setApiKey(KEY);
+
+// Trim all email-related envs to avoid newline/space issues
+const FROM_EMAIL = (process.env.EMAIL_FROM_ADDRESS || "info@ticketpay.us.com").trim();
+const FROM_NAME  = (process.env.EMAIL_FROM_NAME || "TicketPay").trim();
+const REPLY_EMAIL = (process.env.EMAIL_REPLY_TO_ADDRESS || FROM_EMAIL).trim();
+const TO_OVERRIDE = (process.env.EMAIL_TO_OVERRIDE || "").trim();
 
 export async function sendSubscribeConfirmEmail(to: string, plate?: string, state?: string) {
   if (!KEY) {
