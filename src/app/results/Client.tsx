@@ -90,6 +90,8 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
   const [err, setErr] = React.useState<string | null>(null);
   const [ok, setOk] = React.useState(false);
   const [honey, setHoney] = React.useState('');
+  const [subMsg, setSubMsg] = React.useState('');
+  const [subBusy, setSubBusy] = React.useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -112,6 +114,7 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
     }
 
     setLoading(true);
+    setSubBusy(true);
     try {
       const r = await fetch('/api/subscribe', {
         method: 'POST',
@@ -121,10 +124,12 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
       const data = await r.json().catch(()=> ({}));
       if (!r.ok || !data?.ok) throw new Error(data?.error || `Subscribe failed (${r.status})`);
       setOk(true);
+      setSubMsg('Subscription successful! You will receive alerts via ' + (channel === 'email' ? 'Email' : 'SMS') + '.');
     } catch (e: any) {
       setErr(e?.message || 'Something went wrong.');
     } finally {
       setLoading(false);
+      setSubBusy(false);
     }
   }
 
@@ -177,6 +182,15 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
         </div>
 
         {err && <p className="text-sm text-red-600">{err}</p>}
+        {subMsg && (
+          <p role="status" aria-live="polite" className={`text-sm ${subBusy ? "text-neutral-600" : "text-green-700"}`}>
+            {subMsg}
+          </p>
+        )}
+
+        <p className="text-[12px] text-neutral-500 mt-1">
+          By subscribing, you agree to the SMS terms at <a href="/consent" className="underline">/consent</a>. Reply STOP to opt out.
+        </p>
 
         <button
           type="submit"
