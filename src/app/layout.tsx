@@ -2,6 +2,7 @@ import "./globals.css";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { Metadata } from "next";
 import Link from "next/link";
+import Wordmark from "@/components/Wordmark";
 
 const geistSans = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
@@ -22,18 +23,26 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="antialiased text-[16px] text-black">
         <header className="sticky top-0 z-10 bg-white/70 backdrop-blur border-b border-black/5">
           <div className="mx-auto max-w-4xl px-4 h-14 flex items-center justify-between">
-            <a href="/" className="text-base font-semibold tracking-tight hover:text-[hsl(var(--brand))] transition-colors">
-              TicketPay
-            </a>
-            <a
+            <Link href="/" className="inline-flex items-center gap-2">
+              <Wordmark className="text-base" />
+            </Link>
+            <Link
               href="/manage"
               className="rounded-full border border-black/10 px-3 py-1.5 text-sm hover:bg-black/5 transition"
             >
               Manage alerts
-            </a>
+            </Link>
           </div>
         </header>
         <main id="main">{children}</main>
+        <footer className="mx-auto max-w-4xl px-4 py-10 text-sm text-neutral-600">
+          <div className="flex items-center justify-between">
+            <p>© TicketPay • Made in San Francisco</p>
+            <a href="/support" className="underline">
+              Support
+            </a>
+          </div>
+        </footer>
       </body>
     </html>
   );

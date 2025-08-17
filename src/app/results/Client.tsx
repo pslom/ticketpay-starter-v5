@@ -3,6 +3,7 @@
 import React from "react";
 import { useSearchParams } from "next/navigation";
 import Wordmark from "@/components/Wordmark";
+import { triggerConfetti } from "@/components/confetti";
 
 export default function ResultsClient() {
   const sp = useSearchParams();
@@ -90,6 +91,7 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
   const [err, setErr] = React.useState<string | null>(null);
   const [ok, setOk] = React.useState(false);
   const [honey, setHoney] = React.useState('');
+  const [subMsg, setSubMsg] = React.useState('');
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -121,6 +123,8 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
       const data = await r.json().catch(()=> ({}));
       if (!r.ok || !data?.ok) throw new Error(data?.error || `Opt-in failed (${r.status})`);
       setOk(true);
+      setSubMsg("Subscribed. You’ll get alerts.");
+      triggerConfetti();
     } catch (e: any) {
       setErr(e?.message || 'Something went wrong.');
     } finally {
@@ -173,6 +177,7 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
         </div>
 
         {err && <p className="text-sm text-red-600">{err}</p>}
+        {subMsg && <p className="text-sm text-green-600">{subMsg}</p>}
 
         <button
           type="submit"

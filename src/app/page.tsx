@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Aurora from "@/components/Aurora";
-import PrimaryButton from "@/components/PrimaryButton";
+import GradientButton from "@/components/GradientButton";
 
 export default function HomePage() {
   const router = useRouter();
@@ -21,6 +21,7 @@ export default function HomePage() {
         <p className="text-neutral-600 max-w-2xl">
           Real-time alerts in San Francisco. Enter your plate and we’ll notify you when a new ticket is posted.
         </p>
+        <p className="text-sm text-neutral-500">Trusted by San Francisco drivers to avoid late fees.</p>
       </section>
 
       <div className="mt-8 gradient-border">
@@ -34,7 +35,7 @@ export default function HomePage() {
             }}
           >
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_140px]">
-              <label className="space-y-1">
+              <label className="space-y-1.5">
                 <span className="text-sm">Plate</span>
                 <input
                   className="h-12 w-full rounded-xl border border-neutral-300 px-4"
@@ -43,7 +44,7 @@ export default function HomePage() {
                   onChange={(e) => setPlate(e.target.value)}
                 />
               </label>
-              <label className="space-y-1">
+              <label className="space-y-1.5">
                 <span className="text-sm">State</span>
                 <input
                   className="h-12 w-full rounded-xl border border-neutral-300 px-4 uppercase"
@@ -56,10 +57,25 @@ export default function HomePage() {
               </label>
             </div>
 
-            <PrimaryButton type="submit">Get alerts</PrimaryButton>
+            <GradientButton type="submit">Get alerts</GradientButton>
 
-            <p className="text-[12px] text-neutral-500">
-              Private • Secure • One‑tap unsubscribe • <a href="/consent" className="underline">SMS terms</a>
+            <p className="text-[12px] text-neutral-500 flex items-center gap-3">
+              <span className="inline-flex items-center gap-1">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path
+                    d="M12 17a5 5 0 0 0 5-5V7l-5-3-5 3v5a5 5 0 0 0 5 5Z"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                  />
+                </svg>
+                Secure
+              </span>
+              <span>Private</span>
+              <span>One‑tap unsubscribe</span>
+              <a href="/consent" className="underline">
+                SMS terms
+              </a>
+              <span>No spam. No sharing your info.</span>
             </p>
           </form>
         </div>
