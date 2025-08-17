@@ -52,3 +52,6 @@ supabase-ca.pem
 supabase-ca.pem
 .env.local
 .env.local.bak
+.next-dev.log
+.next-dev.pid
+dev.log
