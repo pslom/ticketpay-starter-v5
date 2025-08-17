@@ -14,7 +14,9 @@ export default function Home() {
     <main className="mx-auto max-w-md px-4 py-10 space-y-8">
       <header className="space-y-2">
         <h1 className="text-3xl font-semibold">TicketPay</h1>
-        <p className="text-sm text-neutral-500">Look up SF parking citations and subscribe to alerts.</p>
+        <p className="text-sm text-neutral-500">
+          Look up SF parking citations and subscribe to alerts.
+        </p>
       </header>
 
       <form
