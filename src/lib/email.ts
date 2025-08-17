@@ -1,6 +1,7 @@
 import sgMail from "@sendgrid/mail";
 
-const KEY = process.env.SENDGRID_API_KEY;
+const RAW = process.env.SENDGRID_API_KEY || "";
+const KEY = RAW.trim();
 const FROM_EMAIL = process.env.EMAIL_FROM_ADDRESS || "info@ticketpay.us.com";
 const FROM_NAME = process.env.EMAIL_FROM_NAME || "TicketPay";
 const REPLY_EMAIL = process.env.EMAIL_REPLY_TO_ADDRESS || FROM_EMAIL;
