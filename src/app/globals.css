@@ -26,7 +26,76 @@ a{color:inherit}
 /* Keep transform classes in production (in case of purge edge cases) */
 .sr-only.opacity-100.translate-y-0 { /* sentinel; no-op for Tailwind keep */ }
 
-:focus-visible {
-  outline: 2px solid rgba(0,0,0,0.6);
-  outline-offset: 2px;
+/* Brand palette (swap hue once, app-wide updates) */
+:root {
+  --brand: 257 85% 55%;       /* HSL: violet-indigo accent */
+  --brand-600: 257 85% 48%;
+  --brand-700: 257 85% 42%;
+  --ink: 222 47% 11%;         /* near-black */
+  --muted: 220 14% 46%;
+  --bg: 0 0% 100%;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}
+
+/* Utilities */
+.text-brand { color: hsl(var(--brand)); }
+.bg-brand { background-color: hsl(var(--brand)); }
+.ring-brand { --tw-ring-color: hsl(var(--brand)); }
+.border-brand { border-color: hsl(var(--brand)); }
+
+/* Focus visibility */
+:focus-visible { outline: 2px solid hsl(var(--brand)); outline-offset: 2px; }
+
+/* Subtle background grid (masked fade) */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgba(17,24,39,.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(17,24,39,.06) 1px, transparent 1px);
+  background-size: 24px 24px;
+  -webkit-mask-image: radial-gradient(120% 80% at 50% -10%, #000 40%, transparent 80%);
+          mask-image: radial-gradient(120% 80% at 50% -10%, #000 40%, transparent 80%);
+}
+
+/* Aurora glow blobs */
+.aurora {
+  position: absolute; inset: -10% -10% auto -10%;
+  pointer-events: none; filter: blur(40px); opacity: .55;
+}
+.aurora > span {
+  position: absolute; border-radius: 9999px; mix-blend-mode: multiply;
+  animation: float 16s ease-in-out infinite;
+}
+.aurora .a1 { width: 45vw; height: 45vw; background: hsl(var(--brand)/.35); left: 5%; top: -10%; animation-delay: 0s; }
+.aurora .a2 { width: 35vw; height: 35vw; background: rgba(99,102,241,.35); left: 40%; top: -15%; animation-delay: 4s; }
+.aurora .a3 { width: 45vw; height: 45vw; background: rgba(59,130,246,.28); left: 70%; top: -5%; animation-delay: 8s; }
+@keyframes float {
+  0%,100% { transform: translateY(0) translateX(0) scale(1); }
+  50%     { transform: translateY(12px) translateX(6px) scale(1.02); }
+}
+
+/* Gradient border container (like Stripe cards) */
+.gradient-border {
+  position: relative; border-radius: 1.25rem; padding: 1px;
+  background: linear-gradient(135deg, rgba(99,102,241,.6), rgba(59,130,246,.6), rgba(255,255,255,.6));
+}
+.gradient-border > .inner {
+  border-radius: 1.2rem; background: rgba(255,255,255,.86);
+  backdrop-filter: saturate(180%) blur(6px);
+}
+
+/* Micro motion */
+@keyframes fade-in-up { from { opacity:0; transform: translateY(6px);} to {opacity:1; transform: translateY(0);} }
+.animate-in { animation: fade-in-up 220ms ease-out both; }
+
+/* Shimmer (for skeletons) */
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+.skeleton {
+  position: relative; overflow: hidden; background: linear-gradient(90deg, #eee 25%, #f5f5f5 37%, #eee 63%);
+  background-size: 400% 100%; animation: shimmer 1.2s linear infinite;
 }

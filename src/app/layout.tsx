@@ -20,17 +20,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="antialiased text-[16px] text-black">
-        <header className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-black/5">
-          <div className="mx-auto max-w-2xl px-4 h-14 flex items-center justify-between">
-            <Link href="/" className="text-base font-semibold tracking-tight hover:text-brand transition-colors">
+        <header className="sticky top-0 z-10 bg-white/70 backdrop-blur border-b border-black/5">
+          <div className="mx-auto max-w-4xl px-4 h-14 flex items-center justify-between">
+            <a href="/" className="text-base font-semibold tracking-tight hover:text-[hsl(var(--brand))] transition-colors">
               TicketPay
-            </Link>
-            <Link
+            </a>
+            <a
               href="/manage"
               className="rounded-full border border-black/10 px-3 py-1.5 text-sm hover:bg-black/5 transition"
             >
               Manage alerts
-            </Link>
+            </a>
           </div>
         </header>
         <main id="main">{children}</main>
