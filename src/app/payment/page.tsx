@@ -28,7 +28,7 @@ function PaymentInner() {
       });
       if (!r.ok) {
         const data = await r.json().catch(() => ({}));
-        throw new Error(data?.error || \`Payment init failed (\${r.status})\`);
+        throw new Error(data?.error || `Payment init failed (${r.status})`);
       }
       setOk('Redirecting to payment…');
       // const { url } = await r.json();
@@ -52,7 +52,7 @@ function PaymentInner() {
           <label className="text-sm font-medium">Amount</label>
           <input
             className="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2"
-            value={\`$\${amount}\`}
+            value={`$${amount}`}
             disabled
             readOnly
           />
