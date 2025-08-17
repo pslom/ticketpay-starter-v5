@@ -1,6 +1,6 @@
 'use client';
 
-import React from "react";
+import React, { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 function SubscribeBox({ plate, state, city }: { plate: string; state: string; city?: string }) {
@@ -17,13 +17,7 @@ function SubscribeBox({ plate, state, city }: { plate: string; state: string; ci
       const r = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          plate,
-          state,
-          city: city || '',
-          channel,
-          value,
-        }),
+        body: JSON.stringify({ plate, state, city: city || '', channel, value }),
       });
       const data = await r.json().catch(()=> ({}));
       if (!r.ok || !data?.ok) throw new Error(data?.error || `Subscribe failed (${r.status})`);
@@ -56,7 +50,7 @@ function SubscribeBox({ plate, state, city }: { plate: string; state: string; ci
 
         <div>
           <input
-            className="w-full rounded-xl border border-gray-300 px-3 py-2"
+            className="w-full rounded-2xl border border-gray-300 px-3 py-2"
             placeholder={channel==='email' ? 'you@example.com' : '(202) 555-0123'}
             inputMode={channel==='email' ? 'email' : 'tel'}
             value={value}
@@ -69,7 +63,7 @@ function SubscribeBox({ plate, state, city }: { plate: string; state: string; ci
         <button
           type="submit"
           disabled={loading || !value}
-          className="inline-flex items-center justify-center rounded-xl bg-black px-4 py-2 text-white font-medium disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-2xl bg-black px-4 py-2 text-white font-medium disabled:opacity-60"
         >
           {loading ? 'Saving…' : 'Get alerts'}
         </button>
@@ -84,7 +78,7 @@ function SubscribeBox({ plate, state, city }: { plate: string; state: string; ci
   );
 }
 
-export default function ResultsPage() {
+function ResultsInner() {
   const sp = useSearchParams();
   const plate = (sp.get('plate') || '').toUpperCase();
   const state = (sp.get('state') || '').toUpperCase();
@@ -97,7 +91,6 @@ export default function ResultsPage() {
         Searching for {plate && state ? <><span className="font-mono">{plate}</span> ({state})</> : "your plate"}{city ? ` · ${city}` : ""}.
       </p>
 
-      {/* Optional: slot for showing current ticket summary if you have it */}
       <div className="mt-6 rounded-2xl border border-dashed border-gray-200 p-5 text-sm text-gray-500">
         <div>• If we find open tickets for this plate, we’ll show them here.</div>
         <div>• Either way, subscribing below guarantees alerts for new tickets.</div>
@@ -113,5 +106,13 @@ export default function ResultsPage() {
         <a href="/manage" className="underline">Manage my alerts</a>
       </div>
     </main>
+  );
+}
+
+export default function ResultsPage() {
+  return (
+    <Suspense fallback={<main className="mx-auto max-w-2xl px-4 py-12">Loading…</main>}>
+      <ResultsInner />
+    </Suspense>
   );
 }
