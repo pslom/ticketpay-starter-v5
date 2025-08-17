@@ -23,7 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="antialiased text-[16px] text-black">
         <header className="sticky top-0 z-10 bg-white/70 backdrop-blur border-b border-black/5">
           <div className="mx-auto max-w-4xl px-4 h-14 flex items-center justify-between">
-            <Link href="/" className="inline-flex items-center gap-2">
+            <Link href="/" aria-label="Go to home" className="inline-flex items-center gap-2 focus:outline-none">
               <Wordmark className="text-base" />
             </Link>
             <Link

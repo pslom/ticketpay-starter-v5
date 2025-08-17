@@ -28,16 +28,6 @@ export default function ResultsClient() {
 
   return (
     <main className="min-h-dvh bg-gray-50 text-black">
-      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-black/5">
-        <div className="mx-auto max-w-2xl px-4 h-14 flex items-center justify-between">
-          <a href="/" className="hover:opacity-90" aria-label="TicketPay home">
-            <Wordmark />
-          </a>
-          <a href="/manage" className="rounded-full px-3 py-1.5 text-sm border border-black/10 hover:bg-black/5">
-            Manage alerts
-          </a>
-        </div>
-      </header>
 
       <section className="mx-auto max-w-2xl px-4 py-10">
         <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-gray-50 px-3 py-1 text-xs text-gray-700">
