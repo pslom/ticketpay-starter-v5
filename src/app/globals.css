@@ -13,3 +13,15 @@
 }
 html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
 a{color:inherit}
+
+/* --- TicketPay utilities (safe to append) --- */
+@layer utilities {
+  .tp-gradient {
+    background: linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+  }
+  .tp-accent {
+    background: linear-gradient(90deg,#667eea,#764ba2);
+  }
+}
+/* Keep transform classes in production (in case of purge edge cases) */
+.sr-only.opacity-100.translate-y-0 { /* sentinel; no-op for Tailwind keep */ }

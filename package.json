@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start -p 3010",
     "lint": "next lint",
-    "db:push": "node ./scripts/db-init.js"
+    "db:push": "node ./scripts/db-init.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.5",
