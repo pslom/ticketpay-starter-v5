@@ -1,0 +1,77 @@
+
+> ticketpay-v5@0.1.0 dev
+> next dev -p 3000 -p 3010
+
+   ▲ Next.js 15.4.6
+   - Local:        http://localhost:3010
+   - Network:      http://192.168.1.158:3010
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1344ms
+ ✓ Compiled /middleware in 196ms (158 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 728ms (584 modules)
+ ⨯ Error: Event handlers cannot be passed to Client Component props.
+  <input name="state" className=... placeholder=... required=... pattern=... title=... onInput={function onInput}>
+                                                                                               ^^^^^^^^^^^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+    at stringify (<anonymous>)
+    at stringify (<anonymous>) {
+  digest: '3532774983'
+}
+ GET / 500 in 1189ms
+ ⨯ Error: Event handlers cannot be passed to Client Component props.
+  <input name="state" className=... placeholder=... required=... pattern=... title=... onInput={function onInput}>
+                                                                                               ^^^^^^^^^^^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+    at stringify (<anonymous>)
+    at stringify (<anonymous>) {
+  digest: '3532774983'
+}
+ ○ Compiling /results ...
+ GET / 500 in 1070ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ✓ Compiled /favicon.ico in 2.9s (613 modules)
+ GET /favicon.ico 200 in 626ms
+ ⨯ Error: Event handlers cannot be passed to Client Component props.
+  <input name="state" className=... placeholder=... required=... pattern=... title=... onInput={function onInput}>
+                                                                                               ^^^^^^^^^^^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+    at stringify (<anonymous>)
+    at stringify (<anonymous>) {
+  digest: '3532774983'
+}
+Error: Route "/results" used `searchParams.plate`. `searchParams` should be awaited before using its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at Page (src/app/results/page.tsx:8:30)
+   6 |
+   7 | export default function Page({ searchParams }: { searchParams: { plate?: string; state?: string } }) {
+>  8 |   const plate = (searchParams.plate || "").toUpperCase();
+     |                              ^
+   9 |   const state = (searchParams.state || "").toUpperCase();
+  10 |
+  11 |   return (
+Error: Route "/results" used `searchParams.state`. `searchParams` should be awaited before using its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at Page (src/app/results/page.tsx:9:30)
+   7 | export default function Page({ searchParams }: { searchParams: { plate?: string; state?: string } }) {
+   8 |   const plate = (searchParams.plate || "").toUpperCase();
+>  9 |   const state = (searchParams.state || "").toUpperCase();
+     |                              ^
+  10 |
+  11 |   return (
+  12 |     <Suspense fallback={
+ GET /results?plate=7ABC123&state=CA 200 in 3435ms
+ GET / 500 in 611ms
+ ✓ Compiled /api/lookup in 278ms (615 modules)
+ POST /api/lookup 200 in 380ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⨯ Error: Event handlers cannot be passed to Client Component props.
+  <input name="state" className=... placeholder=... required=... pattern=... title=... onInput={function onInput}>
+                                                                                               ^^^^^^^^^^^^^^^^^^
+If you need interactivity, consider converting part of this to a Client Component.
+    at stringify (<anonymous>)
+    at stringify (<anonymous>) {
+  digest: '3532774983'
+}
+ GET / 500 in 433ms
+ GET /favicon.ico 200 in 51ms

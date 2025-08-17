@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
 
 type Ticket = {
   citation_no: string; plate: string; state: string;
@@ -10,11 +9,7 @@ type Ticket = {
 };
 const dollars = (c:number)=>`$${(c/100).toFixed(2)}`;
 
-export default function ResultsClient() {
-  const sp = useSearchParams();
-  const plate = (sp.get("plate") || "").toUpperCase();
-  const state = (sp.get("state") || "").toUpperCase();
-
+export default function ResultsClient({ plate, state }: { plate: string; state: string }) {
   const [tickets, setTickets] = useState<Ticket[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -39,12 +34,11 @@ export default function ResultsClient() {
         if (!dead) setLoading(false);
       }
     })();
-    return () => { dead = true; };
+    return ()=>{ dead = true; };
   }, [plate, state]);
 
   const total = useMemo(() =>
-    (tickets || []).filter(t => t.status === "open")
-                   .reduce((s, t) => s + t.amount_cents, 0),
+    (tickets || []).filter(t => t.status === "open").reduce((s, t) => s + t.amount_cents, 0),
     [tickets]
   );
 
