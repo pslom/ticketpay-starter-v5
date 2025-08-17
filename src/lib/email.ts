@@ -1,14 +1,18 @@
 import sgMail from "@sendgrid/mail";
 
 const KEY = process.env.SENDGRID_API_KEY;
-const FROM = process.env.EMAIL_FROM || "TicketPay <info@ticketpay.us.com>";
-const REPLY_TO = process.env.EMAIL_REPLY_TO || "info@ticketpay.us.com";
-const TO_OVERRIDE = process.env.EMAIL_TO_OVERRIDE || "info@ticketpay.us.com"; // force all mail here for now
+const FROM_EMAIL = process.env.EMAIL_FROM_ADDRESS || "info@ticketpay.us.com";
+const FROM_NAME = process.env.EMAIL_FROM_NAME || "TicketPay";
+const REPLY_EMAIL = process.env.EMAIL_REPLY_TO_ADDRESS || FROM_EMAIL;
+const TO_OVERRIDE = process.env.EMAIL_TO_OVERRIDE || "info@ticketpay.us.com";
 
 if (KEY) sgMail.setApiKey(KEY);
 
 export async function sendSubscribeConfirmEmail(to: string, plate?: string, state?: string) {
-  if (!KEY) return { skipped: true, reason: "SENDGRID_API_KEY missing" };
+  if (!KEY) {
+    console.error("sendgrid.missing_key");
+    return { skipped: true, reason: "SENDGRID_API_KEY missing" };
+  }
 
   const subject = `You’re subscribed to TicketPay alerts${plate && state ? ` for ${plate} (${state})` : ""}`;
   const html = `
@@ -28,9 +32,9 @@ export async function sendSubscribeConfirmEmail(to: string, plate?: string, stat
   `;
 
   const msg = {
-    to: TO_OVERRIDE || to, // send everything to info@ for now
-    from: FROM,
-    replyTo: REPLY_TO,
+    to: TO_OVERRIDE || to,
+    from: { email: FROM_EMAIL, name: FROM_NAME },
+    replyTo: { email: REPLY_EMAIL, name: FROM_NAME },
     subject,
     html,
     headers: {
@@ -38,7 +42,7 @@ export async function sendSubscribeConfirmEmail(to: string, plate?: string, stat
       "List-Unsubscribe": "<https://ticketpay.us.com/manage>",
       "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
     },
-  };
+  } as Parameters<typeof sgMail.send>[0];
 
   const [res] = await sgMail.send(msg);
   return { messageId: res.headers["x-message-id"] || res.headers["x-message-id".toLowerCase()] };
