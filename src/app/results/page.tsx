@@ -16,34 +16,19 @@ function SubscribeBox({ plate, state, city }: { plate: string; state: string; ci
     e.preventDefault();
     setErr(null);
 
-    // Honeypot
-    if (honey) {
-      setErr('Something went wrong. Please try again.');
-      return;
-    }
+    if (honey) { setErr('Something went wrong. Please try again.'); return; }
 
     const plateNorm = (plate || '').trim().toUpperCase();
     const stateNorm = (state || '').trim().toUpperCase();
+    if (!plateNorm || !stateNorm) { setErr('Enter your plate and state.'); return; }
 
-    if (!plateNorm || !stateNorm) {
-      setErr('Enter your plate and state.');
-      return;
-    }
-
-    let payload: any = { plate: plateNorm, state: stateNorm, city: city || '', channel, value: '' };
-
+    const payload: any = { plate: plateNorm, state: stateNorm, city: city || '', channel, value: '' };
     if (channel === 'email') {
-      if (!isEmail(value)) {
-        setErr('Enter a valid email address.');
-        return;
-      }
+      if (!isEmail(value)) { setErr('Enter a valid email address.'); return; }
       payload.value = value.trim();
     } else {
       const phone = normalizeUSPhone(value);
-      if (!phone) {
-        setErr('Enter a valid US mobile number.');
-        return;
-      }
+      if (!phone) { setErr('Enter a valid US mobile number.'); return; }
       payload.value = phone;
     }
 
@@ -72,12 +57,8 @@ function SubscribeBox({ plate, state, city }: { plate: string; state: string; ci
           We’ll notify you the moment a new ticket is posted for {plate} ({state}) in San Francisco, CA. You can unsubscribe anytime.
         </p>
         <div className="mt-4 flex gap-3">
-          <a href="/manage" className="rounded-xl border border-green-300 bg-white px-3 py-2 text-sm">
-            Manage my alerts
-          </a>
-          <a href="/" className="rounded-xl border border-green-300 bg-white px-3 py-2 text-sm">
-            Search another plate
-          </a>
+          <a href="/manage" className="rounded-xl border border-green-300 bg-white px-3 py-2 text-sm">Manage my alerts</a>
+          <a href="/" className="rounded-xl border border-green-300 bg-white px-3 py-2 text-sm">Search another plate</a>
         </div>
       </div>
     );
@@ -86,20 +67,12 @@ function SubscribeBox({ plate, state, city }: { plate: string; state: string; ci
   return (
     <div className="mt-6 rounded-2xl border border-gray-200 p-5">
       <h3 className="text-base font-semibold">Get alerts for {plate} ({state})</h3>
-      <p className="mt-1 text-sm text-gray-600">
-        San Francisco launch (CA only). We’ll notify you the moment a new ticket posts.
-      </p>
+      <p className="mt-1 text-sm text-gray-600">San Francisco launch (CA only). We’ll notify you the moment a new ticket posts.</p>
 
       <form onSubmit={onSubmit} className="mt-4 space-y-3">
         {/* Honeypot */}
-        <input
-          className="hidden"
-          name="company"
-          autoComplete="off"
-          tabIndex={-1}
-          value={honey}
-          onChange={(e)=>setHoney(e.target.value)}
-        />
+        <input className="hidden" name="company" autoComplete="off" tabIndex={-1}
+               value={honey} onChange={(e)=>setHoney(e.target.value)} />
 
         <div className="flex gap-6">
           <label className="inline-flex items-center gap-2">
@@ -142,7 +115,7 @@ function SubscribeBox({ plate, state, city }: { plate: string; state: string; ci
 
 function ResultsInner() {
   const router = useRouter();
-  const sp = useSearchParams();
+  const sp = useSearchParams(); // <-- OK inside Suspense
   const plate = (sp.get('plate') || '').toUpperCase();
   const state = (sp.get('state') || '').toUpperCase();
   const city  = sp.get('city') || '';
