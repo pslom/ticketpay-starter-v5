@@ -1,57 +1,86 @@
 'use client';
 
 import React from "react";
-import { useRouter } from "next/navigation";
-import { isEmail, normalizeUSPhone } from "@/lib/validate";
+import { useSearchParams } from "next/navigation";
 
-export default function ResultsClient({ plate, state }: { plate: string; state: string }) {
-  const router = useRouter();
+export default function ResultsClient() {
+  const sp = useSearchParams();
+  const plate = (sp.get("plate") || "").toUpperCase();
+  const state = (sp.get("state") || "CA").toUpperCase();
+
+  // Subtle scroll reveal for cards (no deps)
+  React.useEffect(() => {
+    const cards = document.querySelectorAll<HTMLElement>('[data-reveal]');
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            const el = entry.target as HTMLElement;
+            el.classList.remove('opacity-0','translate-y-1');
+            el.classList.add('opacity-100','translate-y-0');
+            io.unobserve(el);
+          }
+        }
+      },
+      { threshold: 0.12 }
+    );
+    cards.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12">
-      <Badge>San Francisco · CA</Badge>
-
-      <h1 className="mt-2 text-2xl font-semibold">Stay ahead of parking tickets</h1>
-      <p className="mt-2 text-sm text-gray-600">
-        Real-time alerts for <span className="font-mono">{plate || "—"}</span>
-        {plate && state ? " " : ""}{state ? `(${state})` : ""}. We’ll notify you the instant a new ticket
-        is posted in San Francisco.
-      </p>
-
-      <InfoBox />
-
-      {plate && state ? (
-        <SubscribeBox plate={plate} state={state} />
-      ) : (
-        <div className="mt-6 text-sm text-red-600">
-          Missing plate or state.{" "}
-          <button onClick={() => router.push("/")} className="underline">Go back</button>.
+    <main className="min-h-dvh bg-gray-50 text-black">
+      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-black/5">
+        <div className="mx-auto max-w-2xl px-4 h-14 flex items-center justify-between">
+          <div className="text-base font-semibold tracking-tight">TicketPay</div>
+          <a href="/manage" className="rounded-full px-3 py-1.5 text-sm border border-black/10 hover:bg-black/5">Manage alerts</a>
         </div>
-      )}
+      </header>
 
-      <div className="mt-8 text-sm">
-        <a href="/manage" className="underline">Manage my alerts</a>
-      </div>
+      <section className="mx-auto max-w-2xl px-4 py-10">
+        <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-gray-50 px-3 py-1 text-xs text-gray-700">
+          San Francisco · CA
+        </div>
+
+        <h1 className="mt-2 text-2xl font-semibold">Check your plate & get alerts</h1>
+        <p className="mt-2 text-sm text-gray-600">
+          Results for <span className="font-mono">{plate || "—"}</span>
+          {state ? ` (${state})` : ""}. If a new ticket posts in San Francisco, we’ll notify you instantly.
+        </p>
+
+        {/* Info box */}
+        <div className="mt-6 rounded-2xl border border-dashed border-gray-200 p-5 text-sm text-gray-600">
+          <ul className="space-y-1">
+            <li>• We’ll show open tickets here (if any are found).</li>
+            <li>• Subscribe to get real-time alerts for new tickets in SF.</li>
+            <li>• Private. Secure. One-tap unsubscribe anytime.</li>
+          </ul>
+        </div>
+
+        <SubscribeBox plate={plate} state={state} />
+
+        <div className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <Card title="Instant alerts" desc="Email or SMS the moment a ticket posts." />
+          <Card title="Clear status" desc="Know what’s open so you can act early." />
+          <Card title="Easy opt-out" desc="Every alert includes a direct unsubscribe link." />
+        </div>
+      </section>
+
+      <footer className="mx-auto max-w-2xl px-4 pb-10 text-[11px] text-gray-500">
+        © TicketPay • San Francisco, CA
+      </footer>
+
+      {/* Tailwind safelist sentinel */}
+      <span className="sr-only opacity-100 translate-y-0"></span>
     </main>
   );
 }
 
-function Badge({ children }: { children: React.ReactNode }) {
+function Card({ title, desc }: { title: string; desc: string }) {
   return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-gray-50 px-3 py-1 text-xs text-gray-700">
-      {children}
-    </div>
-  );
-}
-
-function InfoBox() {
-  return (
-    <div className="mt-6 rounded-2xl border border-dashed border-gray-200 p-5 text-sm text-gray-600">
-      <ul className="space-y-1">
-        <li>• If we find open tickets for this plate, we’ll show them here.</li>
-        <li>• Subscribing guarantees alerts for new tickets in San Francisco.</li>
-        <li>• Private. Secure. One-tap unsubscribe anytime.</li>
-      </ul>
+    <div data-reveal className="opacity-0 translate-y-1 transition-all duration-500 rounded-xl border border-black/10 bg-white p-4 shadow-sm">
+      <div className="text-sm font-medium">{title}</div>
+      <p className="mt-1 text-xs text-gray-600">{desc}</p>
     </div>
   );
 }
@@ -62,7 +91,7 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
   const [loading, setLoading] = React.useState(false);
   const [err, setErr] = React.useState<string | null>(null);
   const [ok, setOk] = React.useState(false);
-  const [honey, setHoney] = React.useState(''); // honeypot
+  const [honey, setHoney] = React.useState(''); // bot trap
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -77,12 +106,12 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
     const payload: any = { plate: plateNorm, state: stateNorm, city: '', channel, value: '' };
 
     if (channel === 'email') {
-      if (!isEmail(value)) { setErr('Enter a valid email address.'); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) { setErr('Enter a valid email address.'); return; }
       payload.value = value.trim();
     } else {
-      const phone = normalizeUSPhone(value);
-      if (!phone) { setErr('Enter a valid US mobile number.'); return; }
-      payload.value = phone;
+      const digits = value.replace(/\D/g, '');
+      if (digits.length !== 10) { setErr('Enter a valid US mobile number.'); return; }
+      payload.value = `+1${digits}`;
     }
 
     setLoading(true);
@@ -119,40 +148,33 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
 
   return (
     <div className="mt-6 rounded-2xl border border-gray-200 p-5">
-      <h3 className="text-base font-semibold">Get alerts for {plate} ({state})</h3>
+      <h3 className="text-base font-semibold">Get alerts for {plate || 'your plate'} ({state})</h3>
       <p className="mt-1 text-sm text-gray-600">San Francisco · CA</p>
 
       <form onSubmit={onSubmit} className="mt-4 space-y-3">
-        {/* Honeypot */}
-        <input
-          className="hidden"
-          name="company"
-          autoComplete="off"
-          tabIndex={-1}
-          value={honey}
-          onChange={(e)=>setHoney(e.target.value)}
-        />
+        {/* honeypot */}
+        <input className="hidden" name="company" autoComplete="off" tabIndex={-1} value={honey} onChange={(e)=>setHoney(e.target.value)} />
 
         <div className="flex gap-6">
           <label className="inline-flex items-center gap-2">
-            <input type="radio" name="channel" value="email"
-              checked={channel==='email'} onChange={()=>setChannel('email')} />
+            <input type="radio" name="channel" value="email" checked={channel==='email'} onChange={()=>setChannel('email')} />
             <span>Email</span>
           </label>
           <label className="inline-flex items-center gap-2">
-            <input type="radio" name="channel" value="sms"
-              checked={channel==='sms'} onChange={()=>setChannel('sms')} />
+            <input type="radio" name="channel" value="sms" checked={channel==='sms'} onChange={()=>setChannel('sms')} />
             <span>SMS</span>
           </label>
         </div>
 
         <div>
+          <label className="sr-only" htmlFor="contact">Contact</label>
           <input
-            className="w-full rounded-2xl border border-gray-300 px-3 py-2"
+            id="contact"
+            className="w-full rounded-xl border border-gray-300 px-4 h-12 text-[16px] focus:outline-none focus:ring-2 focus:ring-[#667eea]"
             placeholder={channel==='email' ? 'you@example.com' : '(415) 555-0123'}
-            inputMode={channel==='email' ? 'email' : 'tel'}
             value={value}
             onChange={(e)=>setValue(e.target.value)}
+            inputMode={channel==='email' ? 'email' : 'tel'}
             required
           />
           <p className="mt-1 text-xs text-gray-500">Private. Secure. Unsubscribe anytime.</p>
