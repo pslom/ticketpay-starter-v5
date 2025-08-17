@@ -1,183 +1,175 @@
-"use client";
+cat > src/app/results/Client.tsx <<'TSX'
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-
-type Ticket = {
-  citation_no: string;
-  plate: string;
-  state: string;
-  amount_cents: number;
-  status: "open" | "paid";
-  violation: string;
-  location: string;
-  issued_at: string;
-  due_at: string;
-};
+import React from "react";
+import { useRouter } from "next/navigation";
+import { isEmail, normalizeUSPhone } from "@/lib/validate";
 
 export default function ResultsClient({ plate, state }: { plate: string; state: string }) {
-  const [tickets, setTickets] = useState<Ticket[] | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState<string | null>(null);
+  const router = useRouter();
 
-  // Subscribe form state
-  const [email, setEmail] = useState("");
-  const [subMsg, setSubMsg] = useState("");
-  const [subBusy, setSubBusy] = useState(false);
+  return (
+    <main className="mx-auto max-w-2xl px-4 py-12">
+      <Badge>San Francisco · CA</Badge>
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        setLoading(true);
-        setErr(null);
-        const res = await fetch("/api/lookup", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ plate, state }),
-        });
-        const data = (await res.json()) as { ok: boolean; tickets?: Ticket[] };
-        if (!alive) return;
-        if (!res.ok || !data.ok) throw new Error("Lookup failed");
-        setTickets(data.tickets || []);
-      } catch (e: any) {
-        setErr(e?.message || "Could not load tickets.");
-      } finally {
-        setLoading(false);
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [plate, state]);
+      <h1 className="mt-2 text-2xl font-semibold">Stay ahead of parking tickets</h1>
+      <p className="mt-2 text-sm text-gray-600">
+        Real-time alerts for <span className="font-mono">{plate || "—"}</span>{plate && state ? " " : ""}{state ? `(${state})` : ""}. 
+        We’ll notify you the instant a new ticket is posted in San Francisco.
+      </p>
 
-  const openTickets = useMemo(() => (tickets || []).filter((t) => t.status === "open"), [tickets]);
-  const totalCents = useMemo(() => openTickets.reduce((s, t) => s + t.amount_cents, 0), [openTickets]);
-  const feeCents = Math.round(totalCents * 0.035) + 99; // simple disclosure example
-  const grandCents = totalCents + feeCents;
-  const fmt = (c: number) => (c / 100).toLocaleString(undefined, { style: "currency", currency: "USD" });
+      <InfoBox />
 
-  if (loading) {
-    return (
-      <main className="mx-auto max-w-md px-4 py-8 space-y-6">
-        <header className="space-y-1">
-          <h1 className="text-xl font-semibold">Tickets for {plate} ({state})</h1>
-        </header>
-        <div className="space-y-3">
-          <div className="h-20 rounded-2xl bg-neutral-200 animate-pulse" />
-          <div className="h-20 rounded-2xl bg-neutral-200 animate-pulse" />
+      {plate && state ? (
+        <SubscribeBox plate={plate} state={state} />
+      ) : (
+        <div className="mt-6 text-sm text-red-600">
+          Missing plate or state.{" "}
+          <button onClick={() => router.push("/")} className="underline">Go back</button>.
         </div>
-      </main>
-    );
+      )}
+
+      <div className="mt-8 text-sm">
+        <a href="/manage" className="underline">Manage my alerts</a>
+      </div>
+    </main>
+  );
+}
+
+function Badge({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-gray-50 px-3 py-1 text-xs text-gray-700">
+      {children}
+    </div>
+  );
+}
+
+function InfoBox() {
+  return (
+    <div className="mt-6 rounded-2xl border border-dashed border-gray-200 p-5 text-sm text-gray-600">
+      <ul className="space-y-1">
+        <li>• If we find open tickets for this plate, we’ll show them here.</li>
+        <li>• Subscribing guarantees alerts for new tickets in San Francisco.</li>
+        <li>• Private. Secure. One-tap unsubscribe anytime.</li>
+      </ul>
+    </div>
+  );
+}
+
+function SubscribeBox({ plate, state }: { plate: string; state: string }) {
+  const [channel, setChannel] = React.useState<'email'|'sms'>('email');
+  const [value, setValue] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [err, setErr] = React.useState<string | null>(null);
+  const [ok, setOk] = React.useState(false);
+  const [honey, setHoney] = React.useState(''); // honeypot
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setErr(null);
+
+    // Honeypot
+    if (honey) { setErr('Something went wrong. Please try again.'); return; }
+
+    // Normalize
+    const plateNorm = (plate || '').trim().toUpperCase();
+    const stateNorm = (state || '').trim().toUpperCase();
+    if (!plateNorm || !stateNorm) { setErr('Enter your plate and state.'); return; }
+
+    const payload: any = { plate: plateNorm, state: stateNorm, city: '', channel, value: '' };
+    if (channel === 'email') {
+      if (!isEmail(value)) { setErr('Enter a valid email address.'); return; }
+      payload.value = value.trim();
+    } else {
+      const phone = normalizeUSPhone(value);
+      if (!phone) { setErr('Enter a valid US mobile number.'); return; }
+      payload.value = phone;
+    }
+
+    setLoading(true);
+    try {
+      const r = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await r.json().catch(()=> ({}));
+      if (!r.ok || !data?.ok) throw new Error(data?.error || `Subscribe failed (${r.status})`);
+      setOk(true);
+    } catch (e: any) {
+      setErr(e?.message || 'Something went wrong.');
+    } finally {
+      setLoading(false);
+    }
   }
 
-  if (err) {
+  if (ok) {
     return (
-      <main className="mx-auto max-w-md px-4 py-8 space-y-4">
-        <h1 className="text-xl font-semibold">Tickets for {plate} ({state})</h1>
-        <p className="text-sm text-red-600">{err}</p>
-      </main>
+      <div className="mt-6 rounded-2xl border border-green-200 bg-green-50 p-5">
+        <h3 className="text-base font-semibold text-green-900">You’re set</h3>
+        <p className="mt-1 text-sm text-green-900/80">
+          We’ll notify you the instant a new ticket is posted for {plate} ({state}) in San Francisco. You can unsubscribe anytime.
+        </p>
+        <div className="mt-4 flex gap-3">
+          <a href="/manage" className="rounded-xl border border-green-300 bg-white px-3 py-2 text-sm">Manage my alerts</a>
+          <a href="/" className="rounded-xl border border-green-300 bg-white px-3 py-2 text-sm">Search another plate</a>
+        </div>
+      </div>
     );
   }
 
   return (
-    <main className="mx-auto max-w-md px-4 py-8 space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-xl font-semibold">Tickets for {plate} ({state})</h1>
-        {openTickets.length === 0 ? (
-          <p className="text-sm text-neutral-600">No open tickets found.</p>
-        ) : (
-          <p className="text-sm text-neutral-600">{openTickets.length} open {openTickets.length === 1 ? "ticket" : "tickets"}.</p>
-        )}
-      </header>
+    <div className="mt-6 rounded-2xl border border-gray-200 p-5">
+      <h3 className="text-base font-semibold">Get alerts for {plate} ({state})</h3>
+      <p className="mt-1 text-sm text-gray-600">San Francisco · CA</p>
 
-      <section className="space-y-3">
-        {openTickets.map((t) => (
-          <article key={t.citation_no} className="rounded-2xl border border-neutral-200 p-4 space-y-1">
-            <div className="flex items-center justify-between">
-              <div className="font-medium">{t.violation}</div>
-              <div className="font-semibold">{fmt(t.amount_cents)}</div>
-            </div>
-            <div className="text-xs text-neutral-600">
-              #{t.citation_no} · {new Date(t.issued_at).toLocaleDateString()} · Due {new Date(t.due_at).toLocaleDateString()}
-            </div>
-            <div className="text-xs text-neutral-500">{t.location}</div>
-          </article>
-        ))}
-      </section>
+      <form onSubmit={onSubmit} className="mt-4 space-y-3">
+        {/* Honeypot (bots fill this, humans don't) */}
+        <input
+          className="hidden"
+          name="company"
+          autoComplete="off"
+          tabIndex={-1}
+          value={honey}
+          onChange={(e)=>setHoney(e.target.value)}
+        />
 
-      {openTickets.length > 0 && (
-        <section className="space-y-2 rounded-2xl border border-neutral-200 p-4">
-          <div className="flex items-center justify-between">
-            <div className="font-medium">Amount due</div>
-            <div className="font-semibold">{fmt(totalCents)}</div>
-          </div>
-          <div className="flex items-center justify-between text-sm text-neutral-600">
-            <div>Processing fee <span className="underline decoration-dotted" title="Covers card processing and platform costs.">What’s this?</span></div>
-            <div>{fmt(feeCents)}</div>
-          </div>
-          <div className="flex items-center justify-between border-t border-neutral-200 pt-2">
-            <div className="font-medium">Total</div>
-            <div className="font-semibold">{fmt(grandCents)}</div>
-          </div>
+        <div className="flex gap-6">
+          <label className="inline-flex items-center gap-2">
+            <input type="radio" name="channel" value="email"
+              checked={channel==='email'} onChange={()=>setChannel('email')} />
+            <span>Email</span>
+          </label>
+          <label className="inline-flex items-center gap-2">
+            <input type="radio" name="channel" value="sms"
+              checked={channel==='sms'} onChange={()=>setChannel('sms')} />
+            <span>SMS</span>
+          </label>
+        </div>
 
-          <Link
-            href={`/payment?plate=${encodeURIComponent(plate)}&state=${encodeURIComponent(state)}&total=${grandCents}`}
-            className="mt-3 block text-center h-12 rounded-xl bg-black text-white font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-black/30"
-          >
-            Pay now
-          </Link>
-          <p className="text-[13px] text-neutral-600">Payment deadline: Today 11:59pm PT.</p>
-        </section>
-      )}
-
-      <section className="space-y-2">
-        <h2 className="text-lg font-medium">Get new ticket alerts</h2>
-        <p className="text-sm text-neutral-600">
-          We’ll email you when SF posts a new citation for {plate} ({state}).
-        </p>
-        <form
-          className="flex gap-2"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            setSubMsg("");
-            setSubBusy(true);
-            try {
-              const res = await fetch("/api/subscribe", {
-                method: "POST",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify({ email, plate, state }),
-              });
-              const data = await res.json().catch(() => ({}));
-              if (!res.ok || data?.ok === false) throw new Error(data?.error || "Subscribe failed");
-              setSubMsg("Subscribed. We’ll email you when new tickets appear. Unsubscribe anytime.");
-              setEmail("");
-            } catch (e: any) {
-              setSubMsg(e?.message || "Something went wrong. Try again.");
-            } finally {
-              setSubBusy(false);
-            }
-          }}
-        >
+        <div>
           <input
-            type="email"
+            className="w-full rounded-2xl border border-gray-300 px-3 py-2"
+            placeholder={channel==='email' ? 'you@example.com' : '(415) 555-0123'}
+            inputMode={channel==='email' ? 'email' : 'tel'}
+            value={value}
+            onChange={(e)=>setValue(e.target.value)}
             required
-            placeholder="you@example.com"
-            className="h-12 flex-1 rounded-xl border border-neutral-300 px-4"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            aria-label="Email address"
           />
-          <button
-            type="submit"
-            disabled={subBusy}
-            className="h-12 px-4 rounded-xl bg-black text-white font-medium disabled:opacity-50"
-          >
-            {subBusy ? "Subscribing…" : "Subscribe"}
-          </button>
-        </form>
-        {subMsg && <p className="text-sm text-neutral-700">{subMsg}</p>}
-      </section>
-    </main>
+          <p className="mt-1 text-xs text-gray-500">Private. Secure. Unsubscribe anytime.</p>
+        </div>
+
+        {err && <p className="text-sm text-red-600">{err}</p>}
+
+        <button
+          type="submit"
+          disabled={loading || !value}
+          className="inline-flex items-center justify-center rounded-2xl bg-black px-4 py-2 text-white font-medium transition transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60"
+        >
+          {loading ? 'Saving…' : 'Get alerts'}
+        </button>
+      </form>
+    </div>
   );
 }
+TSX
