@@ -25,3 +25,8 @@ a{color:inherit}
 }
 /* Keep transform classes in production (in case of purge edge cases) */
 .sr-only.opacity-100.translate-y-0 { /* sentinel; no-op for Tailwind keep */ }
+
+:focus-visible {
+  outline: 2px solid rgba(0,0,0,0.6);
+  outline-offset: 2px;
+}

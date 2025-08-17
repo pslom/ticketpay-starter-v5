@@ -90,8 +90,6 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
   const [err, setErr] = React.useState<string | null>(null);
   const [ok, setOk] = React.useState(false);
   const [honey, setHoney] = React.useState('');
-  const [subMsg, setSubMsg] = React.useState('');
-  const [subBusy, setSubBusy] = React.useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -114,36 +112,29 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
     }
 
     setLoading(true);
-    setSubBusy(true);
     try {
-      const r = await fetch('/api/subscribe', {
+      const r = await fetch('/api/optin/start', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(payload),
       });
       const data = await r.json().catch(()=> ({}));
-      if (!r.ok || !data?.ok) throw new Error(data?.error || `Subscribe failed (${r.status})`);
+      if (!r.ok || !data?.ok) throw new Error(data?.error || `Opt-in failed (${r.status})`);
       setOk(true);
-      setSubMsg('Subscription successful! You will receive alerts via ' + (channel === 'email' ? 'Email' : 'SMS') + '.');
     } catch (e: any) {
       setErr(e?.message || 'Something went wrong.');
     } finally {
       setLoading(false);
-      setSubBusy(false);
     }
   }
 
   if (ok) {
     return (
-      <div className="mt-6 rounded-2xl border border-green-200 bg-green-50 p-5">
-        <h3 className="text-base font-semibold text-green-900">You’re set</h3>
-        <p className="mt-1 text-sm text-green-900/80">
-          We’ll notify you the instant a new ticket is posted for {plate} ({state}) in San Francisco. You can unsubscribe anytime.
+      <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-5">
+        <h3 className="text-base font-semibold text-blue-900">Check your inbox/phone</h3>
+        <p className="mt-1 text-sm text-blue-900/80">
+          We just sent a confirmation link to finish signup. Once confirmed, alerts start instantly for San Francisco.
         </p>
-        <div className="mt-4 flex gap-3">
-          <a href="/manage" className="rounded-xl border border-green-300 bg-white px-3 py-2 text-sm">Manage my alerts</a>
-          <a href="/" className="rounded-xl border border-green-300 bg-white px-3 py-2 text-sm">Search another plate</a>
-        </div>
       </div>
     );
   }
@@ -182,15 +173,6 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
         </div>
 
         {err && <p className="text-sm text-red-600">{err}</p>}
-        {subMsg && (
-          <p role="status" aria-live="polite" className={`text-sm ${subBusy ? "text-neutral-600" : "text-green-700"}`}>
-            {subMsg}
-          </p>
-        )}
-
-        <p className="text-[12px] text-neutral-500 mt-1">
-          By subscribing, you agree to the SMS terms at <a href="/consent" className="underline">/consent</a>. Reply STOP to opt out.
-        </p>
 
         <button
           type="submit"

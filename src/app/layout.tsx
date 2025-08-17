@@ -20,10 +20,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
 
         <header className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-black/5">
-          <div className="mx-auto max-w-2xl px-4 h-14 flex items-center">
+          <div className="mx-auto max-w-2xl px-4 h-14 flex items-center justify-between">
             {/* Replace any <Logo/> or "TP" with this link */}
             <Link href="/" className="text-base font-semibold tracking-tight">
               TicketPay
+            </Link>
+            <Link
+              href="/manage"
+              className="rounded-full border border-black/10 px-3 py-1.5 text-sm hover:bg-black/5"
+            >
+              Manage alerts
             </Link>
           </div>
         </header>
