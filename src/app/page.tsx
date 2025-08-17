@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import React from "react";
-import Logo from "@/components/Logo";
+import Wordmark from "@/components/Wordmark";
 
 export default function HomePage() {
   const router = useRouter();
@@ -16,7 +16,6 @@ export default function HomePage() {
     setErr(null);
     const p = plate.trim().toUpperCase();
     if (!p) { setErr("Enter your plate"); return; }
-
     setLoading(true);
     try {
       const q = new URLSearchParams({ plate: p, state });
@@ -28,12 +27,11 @@ export default function HomePage() {
 
   return (
     <main className="min-h-dvh bg-white text-black">
-      {/* Clean sticky header */}
+      {/* Single sticky header (links home) */}
       <header className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-black/5">
         <div className="mx-auto max-w-2xl px-4 h-14 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-2 hover:opacity-80" aria-label="TicketPay home">
-            <Logo className="h-6 w-6" />
-            <span className="text-base font-semibold tracking-tight">TicketPay</span>
+          <a href="/" className="hover:opacity-90" aria-label="TicketPay home">
+            <Wordmark />
           </a>
           <a href="/manage" className="rounded-full px-3 py-1.5 text-sm border border-black/10 hover:bg-black/5">
             Manage alerts
@@ -48,7 +46,6 @@ export default function HomePage() {
           <p className="mt-2 text-sm text-gray-600">
             Real-time alerts in San Francisco. Enter your plate and we’ll notify you the instant a new ticket is posted.
           </p>
-          <div className="h-0.5 w-16 mt-6 rounded-full bg-gradient-to-r from-[#667eea] to-[#764ba2]" />
 
           {/* Card */}
           <form onSubmit={onSubmit} className="mt-8 rounded-2xl border border-black/10 bg-white p-5 shadow-sm space-y-4">

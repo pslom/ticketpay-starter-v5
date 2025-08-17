@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useSearchParams } from "next/navigation";
-import Logo from "@/components/Logo";
+import Wordmark from "@/components/Wordmark";
 
 export default function ResultsClient() {
   const sp = useSearchParams();
@@ -29,9 +29,8 @@ export default function ResultsClient() {
     <main className="min-h-dvh bg-gray-50 text-black">
       <header className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-black/5">
         <div className="mx-auto max-w-2xl px-4 h-14 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-2 hover:opacity-80" aria-label="TicketPay home">
-            <Logo className="h-6 w-6" />
-            <span className="text-base font-semibold tracking-tight">TicketPay</span>
+          <a href="/" className="hover:opacity-90" aria-label="TicketPay home">
+            <Wordmark />
           </a>
           <a href="/manage" className="rounded-full px-3 py-1.5 text-sm border border-black/10 hover:bg-black/5">
             Manage alerts
@@ -95,7 +94,6 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
-
     if (honey) { setErr('Something went wrong. Please try again.'); return; }
 
     const plateNorm = (plate || '').trim().toUpperCase();
