@@ -1,4 +1,3 @@
-cat > src/app/results/Client.tsx <<'TSX'
 'use client';
 
 import React from "react";
@@ -14,8 +13,9 @@ export default function ResultsClient({ plate, state }: { plate: string; state: 
 
       <h1 className="mt-2 text-2xl font-semibold">Stay ahead of parking tickets</h1>
       <p className="mt-2 text-sm text-gray-600">
-        Real-time alerts for <span className="font-mono">{plate || "—"}</span>{plate && state ? " " : ""}{state ? `(${state})` : ""}. 
-        We’ll notify you the instant a new ticket is posted in San Francisco.
+        Real-time alerts for <span className="font-mono">{plate || "—"}</span>
+        {plate && state ? " " : ""}{state ? `(${state})` : ""}. We’ll notify you the instant a new ticket
+        is posted in San Francisco.
       </p>
 
       <InfoBox />
@@ -68,15 +68,14 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
     e.preventDefault();
     setErr(null);
 
-    // Honeypot
     if (honey) { setErr('Something went wrong. Please try again.'); return; }
 
-    // Normalize
     const plateNorm = (plate || '').trim().toUpperCase();
     const stateNorm = (state || '').trim().toUpperCase();
     if (!plateNorm || !stateNorm) { setErr('Enter your plate and state.'); return; }
 
     const payload: any = { plate: plateNorm, state: stateNorm, city: '', channel, value: '' };
+
     if (channel === 'email') {
       if (!isEmail(value)) { setErr('Enter a valid email address.'); return; }
       payload.value = value.trim();
@@ -124,7 +123,7 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
       <p className="mt-1 text-sm text-gray-600">San Francisco · CA</p>
 
       <form onSubmit={onSubmit} className="mt-4 space-y-3">
-        {/* Honeypot (bots fill this, humans don't) */}
+        {/* Honeypot */}
         <input
           className="hidden"
           name="company"
@@ -172,4 +171,3 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
     </div>
   );
 }
-TSX
