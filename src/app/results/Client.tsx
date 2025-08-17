@@ -2,28 +2,25 @@
 
 import React from "react";
 import { useSearchParams } from "next/navigation";
+import Logo from "@/components/Logo";
 
 export default function ResultsClient() {
   const sp = useSearchParams();
   const plate = (sp.get("plate") || "").toUpperCase();
   const state = (sp.get("state") || "CA").toUpperCase();
 
-  // Subtle scroll reveal for cards (no deps)
   React.useEffect(() => {
     const cards = document.querySelectorAll<HTMLElement>('[data-reveal]');
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            const el = entry.target as HTMLElement;
-            el.classList.remove('opacity-0','translate-y-1');
-            el.classList.add('opacity-100','translate-y-0');
-            io.unobserve(el);
-          }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const el = entry.target as HTMLElement;
+          el.classList.remove('opacity-0','translate-y-1');
+          el.classList.add('opacity-100','translate-y-0');
+          io.unobserve(el);
         }
-      },
-      { threshold: 0.12 }
-    );
+      });
+    }, { threshold: 0.12 });
     cards.forEach((el) => io.observe(el));
     return () => io.disconnect();
   }, []);
@@ -32,8 +29,13 @@ export default function ResultsClient() {
     <main className="min-h-dvh bg-gray-50 text-black">
       <header className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-black/5">
         <div className="mx-auto max-w-2xl px-4 h-14 flex items-center justify-between">
-          <div className="text-base font-semibold tracking-tight">TicketPay</div>
-          <a href="/manage" className="rounded-full px-3 py-1.5 text-sm border border-black/10 hover:bg-black/5">Manage alerts</a>
+          <a href="/" className="flex items-center gap-2 hover:opacity-80" aria-label="TicketPay home">
+            <Logo className="h-6 w-6" />
+            <span className="text-base font-semibold tracking-tight">TicketPay</span>
+          </a>
+          <a href="/manage" className="rounded-full px-3 py-1.5 text-sm border border-black/10 hover:bg-black/5">
+            Manage alerts
+          </a>
         </div>
       </header>
 
@@ -44,11 +46,10 @@ export default function ResultsClient() {
 
         <h1 className="mt-2 text-2xl font-semibold">Check your plate & get alerts</h1>
         <p className="mt-2 text-sm text-gray-600">
-          Results for <span className="font-mono">{plate || "—"}</span>
-          {state ? ` (${state})` : ""}. If a new ticket posts in San Francisco, we’ll notify you instantly.
+          Results for <span className="font-mono">{plate || "—"}</span>{state ? ` (${state})` : ""}.
+          If a new ticket posts in San Francisco, we’ll notify you instantly.
         </p>
 
-        {/* Info box */}
         <div className="mt-6 rounded-2xl border border-dashed border-gray-200 p-5 text-sm text-gray-600">
           <ul className="space-y-1">
             <li>• We’ll show open tickets here (if any are found).</li>
@@ -69,8 +70,6 @@ export default function ResultsClient() {
       <footer className="mx-auto max-w-2xl px-4 pb-10 text-[11px] text-gray-500">
         © TicketPay • San Francisco, CA
       </footer>
-
-      {/* Tailwind safelist sentinel */}
       <span className="sr-only opacity-100 translate-y-0"></span>
     </main>
   );
@@ -91,7 +90,7 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
   const [loading, setLoading] = React.useState(false);
   const [err, setErr] = React.useState<string | null>(null);
   const [ok, setOk] = React.useState(false);
-  const [honey, setHoney] = React.useState(''); // bot trap
+  const [honey, setHoney] = React.useState('');
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -152,7 +151,6 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
       <p className="mt-1 text-sm text-gray-600">San Francisco · CA</p>
 
       <form onSubmit={onSubmit} className="mt-4 space-y-3">
-        {/* honeypot */}
         <input className="hidden" name="company" autoComplete="off" tabIndex={-1} value={honey} onChange={(e)=>setHoney(e.target.value)} />
 
         <div className="flex gap-6">

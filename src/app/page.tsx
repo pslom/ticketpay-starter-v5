@@ -1,148 +1,105 @@
 'use client';
 
-import React from "react";
 import { useRouter } from "next/navigation";
+import React from "react";
+import Logo from "@/components/Logo";
 
 export default function HomePage() {
   const router = useRouter();
   const [plate, setPlate] = React.useState("");
-  const [state] = React.useState("CA"); // SF launch → CA only
-  const [err, setErr] = React.useState("");
-  const [mounted, setMounted] = React.useState(false);
+  const [state] = React.useState("CA");
+  const [err, setErr] = React.useState<string | null>(null);
+  const [loading, setLoading] = React.useState(false);
 
-  React.useEffect(() => {
-    setMounted(true);
-
-    // Scroll-trigger fade for reveal cards (no dependencies)
-    const cards = document.querySelectorAll<HTMLElement>('[data-reveal]');
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const el = entry.target as HTMLElement;
-            el.classList.remove('opacity-0','translate-y-1');
-            el.classList.add('opacity-100','translate-y-0');
-            io.unobserve(el);
-          }
-        });
-      },
-      { threshold: 0.12 }
-    );
-    cards.forEach((el) => io.observe(el));
-    return () => io.disconnect();
-  }, []);
-
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setErr("");
-    if (!plate.trim()) {
-      setErr("Enter your plate to continue.");
-      return;
+    setErr(null);
+    const p = plate.trim().toUpperCase();
+    if (!p) { setErr("Enter your plate"); return; }
+
+    setLoading(true);
+    try {
+      const q = new URLSearchParams({ plate: p, state });
+      router.push(`/results?${q}`);
+    } finally {
+      setLoading(false);
     }
-    const q = new URLSearchParams({ plate: plate.trim().toUpperCase(), state });
-    router.push(`/results?${q}`);
   }
 
   return (
     <main className="min-h-dvh bg-white text-black">
-      {/* Minimal sticky header */}
+      {/* Clean sticky header */}
       <header className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-black/5">
         <div className="mx-auto max-w-2xl px-4 h-14 flex items-center justify-between">
-          <div className="text-base font-semibold tracking-tight">TicketPay</div>
+          <a href="/" className="flex items-center gap-2 hover:opacity-80" aria-label="TicketPay home">
+            <Logo className="h-6 w-6" />
+            <span className="text-base font-semibold tracking-tight">TicketPay</span>
+          </a>
           <a href="/manage" className="rounded-full px-3 py-1.5 text-sm border border-black/10 hover:bg-black/5">
             Manage alerts
           </a>
         </div>
       </header>
 
-      {/* Hero with brand gradient accent */}
-      <section className="relative pb-2 pt-10 sm:pt-12" aria-label="Hero">
-        <div
-          className="pointer-events-none absolute inset-x-0 -top-24 h-56 blur-2xl"
-          style={{ background: "linear-gradient(135deg,#667eea 0%,#764ba2 100%)", opacity: 0.15 }}
-        />
-        <div className="relative mx-auto max-w-2xl px-4">
-          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">
-            Stay ahead of parking tickets
-          </h1>
+      {/* Hero */}
+      <section className="bg-gradient-to-b from-[#f4f2ff] to-white">
+        <div className="mx-auto max-w-2xl px-4 py-12">
+          <h1 className="text-3xl font-semibold tracking-tight">Stay ahead of parking tickets</h1>
           <p className="mt-2 text-sm text-gray-600">
-            Real-time alerts in <span className="font-medium">San Francisco</span>. Enter your plate and we’ll notify you the instant a new ticket is posted.
+            Real-time alerts in San Francisco. Enter your plate and we’ll notify you the instant a new ticket is posted.
           </p>
-          <div className="mx-auto my-6 h-0.5 w-24 rounded-full" style={{ background: "linear-gradient(90deg,#667eea,#764ba2)" }} />
-        </div>
+          <div className="h-0.5 w-16 mt-6 rounded-full bg-gradient-to-r from-[#667eea] to-[#764ba2]" />
 
-        {/* Search Card */}
-        <div className={`mx-auto max-w-2xl px-4 pt-2 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"} transition-all duration-300`}>
-          <form onSubmit={onSubmit} className="rounded-2xl border border-black/10 bg-white p-5 shadow-sm">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="sm:col-span-2">
-                <label className="text-sm font-medium" htmlFor="plate">Plate</label>
+          {/* Card */}
+          <form onSubmit={onSubmit} className="mt-8 rounded-2xl border border-black/10 bg-white p-5 shadow-sm space-y-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_140px]">
+              <label className="block space-y-1">
+                <span className="text-sm font-medium">Plate</span>
                 <input
-                  id="plate"
-                  className="mt-1 h-12 w-full rounded-xl border border-gray-300 px-4 text-[16px] focus:outline-none focus:ring-2 focus:ring-[#667eea]"
+                  className="h-12 w-full rounded-xl border border-gray-300 bg-gray-50 px-4 text-[16px] focus:outline-none focus:ring-2 focus:ring-[#667eea]"
                   placeholder="ABC123"
                   value={plate}
-                  onChange={(e) => setPlate(e.target.value.toUpperCase())}
-                  inputMode="text"
-                  autoComplete="off"
+                  onChange={(e) => setPlate(e.target.value)}
+                  autoCapitalize="characters"
                   required
                 />
-              </div>
+              </label>
 
-              <div>
-                <label className="text-sm font-medium" htmlFor="state">State</label>
+              <label className="block space-y-1">
+                <span className="text-sm font-medium">State</span>
                 <input
-                  id="state"
-                  className="mt-1 h-12 w-full rounded-xl border border-gray-300 px-4 text-[16px] bg-gray-50 text-gray-700"
+                  className="h-12 w-full rounded-xl border border-gray-300 bg-gray-100 px-4 text-[16px]"
                   value={state}
                   readOnly
+                  aria-label="California only"
                 />
-                <p className="mt-1 text-[11px] text-gray-500">CA only</p>
-              </div>
+                <p className="mt-1 text-xs text-gray-500">CA only (SF).</p>
+              </label>
             </div>
 
-            {err && <p className="mt-3 text-sm text-red-600">{err}</p>}
+            {err && <p className="text-sm text-red-600">{err}</p>}
 
             <button
               type="submit"
-              className="mt-5 h-12 w-full rounded-xl bg-black text-white font-medium text-[16px] hover:opacity-95 active:opacity-90 focus:outline-none focus:ring-2 focus:ring-black/30 transition transform hover:scale-[1.01] active:scale-[0.99]"
+              disabled={loading || !plate}
+              className="h-12 w-full rounded-2xl bg-black text-white font-medium transition transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60"
             >
-              Get alerts
+              {loading ? "Checking…" : "Get alerts"}
             </button>
 
-            {/* Trust strip */}
-            <div className="mt-4 grid grid-cols-3 gap-3 text-[11px] text-gray-600">
-              <div className="flex items-center gap-2">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2l7 4v6c0 5-3.5 9-7 10-3.5-1-7-5-7-10V6l7-4z" stroke="currentColor"/></svg>
-                Private
-              </div>
-              <div className="flex items-center gap-2">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 17l-5 3 1.5-5.5L4 10l5.5-.5L12 4l2.5 5.5L20 10l-4.5 4.5L17 20l-5-3z" stroke="currentColor"/></svg>
-                Secure
-              </div>
-              <div className="flex items-center gap-2">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor"/></svg>
-                One-tap unsubscribe
-              </div>
+            {/* Trust row */}
+            <div className="flex flex-wrap gap-6 pt-1 text-xs text-gray-600">
+              <TrustItem icon="lock">Private</TrustItem>
+              <TrustItem icon="shield">Secure</TrustItem>
+              <TrustItem icon="arrow">One-tap unsubscribe</TrustItem>
             </div>
           </form>
-        </div>
-      </section>
 
-      {/* How it works + Features */}
-      <section className="mx-auto max-w-2xl px-4 py-10">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div data-reveal className="opacity-0 translate-y-1 transition-all duration-500 rounded-xl border border-black/10 p-4">
-            <div className="text-sm font-medium">1 · Search</div>
-            <p className="mt-1 text-xs text-gray-600">Enter your plate (CA). We’ll check SF for open tickets.</p>
-          </div>
-          <div data-reveal className="opacity-0 translate-y-1 transition-all duration-500 rounded-xl border border-black/10 p-4">
-            <div className="text-sm font-medium">2 · Subscribe</div>
-            <p className="mt-1 text-xs text-gray-600">Add email or SMS to get instant alerts on new tickets.</p>
-          </div>
-          <div data-reveal className="opacity-0 translate-y-1 transition-all duration-500 rounded-xl border border-black/10 p-4">
-            <div className="text-sm font-medium">3 · Stay ahead</div>
-            <p className="mt-1 text-xs text-gray-600">Action items early—before late fees ever hit.</p>
+          {/* Steps */}
+          <div className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <StepCard n={1} title="Search" desc="Enter your plate (CA). We’ll check SF for open tickets." />
+            <StepCard n={2} title="Subscribe" desc="Add email or SMS to get instant alerts on new tickets." />
+            <StepCard n={3} title="Stay ahead" desc="Act early—before late fees ever hit." />
           </div>
         </div>
       </section>
@@ -151,8 +108,51 @@ export default function HomePage() {
         © TicketPay • San Francisco, CA · <a href="/support" className="underline">Support</a>
       </footer>
 
-      {/* Keep these classes in Tailwind build */}
+      {/* Tailwind safelist sentinel */}
       <span className="sr-only opacity-100 translate-y-0"></span>
     </main>
+  );
+}
+
+function StepCard({ n, title, desc }: { n: number; title: string; desc: string }) {
+  return (
+    <div className="rounded-xl border border-black/10 bg-white p-4 shadow-sm">
+      <div className="text-sm font-medium">{n} · {title}</div>
+      <p className="mt-1 text-xs text-gray-600">{desc}</p>
+    </div>
+  );
+}
+
+function TrustItem({ icon, children }: { icon: "lock" | "shield" | "arrow"; children: React.ReactNode }) {
+  return (
+    <div className="inline-flex items-center gap-2">
+      <Icon kind={icon} />
+      <span>{children}</span>
+    </div>
+  );
+}
+
+function Icon({ kind, className = "h-4 w-4" }: { kind: "lock" | "shield" | "arrow"; className?: string }) {
+  if (kind === "lock") {
+    return (
+      <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8">
+        <rect x="4" y="10" width="16" height="10" rx="2" />
+        <path d="M8 10V7a4 4 0 1 1 8 0v3" />
+      </svg>
+    );
+  }
+  if (kind === "shield") {
+    return (
+      <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6l7-3z" />
+        <path d="M9.5 12.5l1.8 1.8 3.7-3.7" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M5 12h12" />
+      <path d="M13 6l6 6-6 6" />
+    </svg>
   );
 }

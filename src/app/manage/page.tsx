@@ -18,7 +18,7 @@ type ListResp =
 
 type UnsubResp =
   | { ok: true }
-  | { ok: false; error: string };
+  | { ok: false, error: string };
 
 export default function ManagePage() {
   const [channel, setChannel] = React.useState<'sms' | 'email'>('email');
@@ -222,6 +222,10 @@ export default function ManagePage() {
 
       {/* Keep these classes in Tailwind build */}
       <span className="sr-only opacity-100 translate-y-0"></span>
+        {msg && <p className="text-sm text-green-700">{msg}</p>}
+        <p className="text-[12px] text-neutral-500">
+          See SMS terms at <a href="/consent" className="underline">/consent</a>. Reply STOP to opt out.
+        </p>
     </main>
   );
 }
