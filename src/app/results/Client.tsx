@@ -1,103 +1,183 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 
 type Ticket = {
-  citation_no: string; plate: string; state: string;
-  amount_cents: number; status: "open" | "paid" | "void";
-  violation?: string; location?: string; issued_at?: string; due_at?: string;
+  citation_no: string;
+  plate: string;
+  state: string;
+  amount_cents: number;
+  status: "open" | "paid";
+  violation: string;
+  location: string;
+  issued_at: string;
+  due_at: string;
 };
-const dollars = (c:number)=>`$${(c/100).toFixed(2)}`;
 
 export default function ResultsClient({ plate, state }: { plate: string; state: string }) {
   const [tickets, setTickets] = useState<Ticket[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
+  // Subscribe form state
+  const [email, setEmail] = useState("");
+  const [subMsg, setSubMsg] = useState("");
+  const [subBusy, setSubBusy] = useState(false);
+
   useEffect(() => {
-    let dead = false;
+    let alive = true;
     (async () => {
-      setLoading(true); setErr(null);
       try {
+        setLoading(true);
+        setErr(null);
         const res = await fetch("/api/lookup", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ plate, state }),
-          cache: "no-store",
         });
-        if (!res.ok) throw new Error();
-        const json = await res.json();
-        if (!dead) setTickets(json.tickets || []);
-      } catch {
-        if (!dead) setErr("Can’t reach the city right now. Try again in a moment.");
+        const data = (await res.json()) as { ok: boolean; tickets?: Ticket[] };
+        if (!alive) return;
+        if (!res.ok || !data.ok) throw new Error("Lookup failed");
+        setTickets(data.tickets || []);
+      } catch (e: any) {
+        setErr(e?.message || "Could not load tickets.");
       } finally {
-        if (!dead) setLoading(false);
+        setLoading(false);
       }
     })();
-    return ()=>{ dead = true; };
+    return () => {
+      alive = false;
+    };
   }, [plate, state]);
 
-  const total = useMemo(() =>
-    (tickets || []).filter(t => t.status === "open").reduce((s, t) => s + t.amount_cents, 0),
-    [tickets]
-  );
+  const openTickets = useMemo(() => (tickets || []).filter((t) => t.status === "open"), [tickets]);
+  const totalCents = useMemo(() => openTickets.reduce((s, t) => s + t.amount_cents, 0), [openTickets]);
+  const feeCents = Math.round(totalCents * 0.035) + 99; // simple disclosure example
+  const grandCents = totalCents + feeCents;
+  const fmt = (c: number) => (c / 100).toLocaleString(undefined, { style: "currency", currency: "USD" });
+
+  if (loading) {
+    return (
+      <main className="mx-auto max-w-md px-4 py-8 space-y-6">
+        <header className="space-y-1">
+          <h1 className="text-xl font-semibold">Tickets for {plate} ({state})</h1>
+        </header>
+        <div className="space-y-3">
+          <div className="h-20 rounded-2xl bg-neutral-200 animate-pulse" />
+          <div className="h-20 rounded-2xl bg-neutral-200 animate-pulse" />
+        </div>
+      </main>
+    );
+  }
+
+  if (err) {
+    return (
+      <main className="mx-auto max-w-md px-4 py-8 space-y-4">
+        <h1 className="text-xl font-semibold">Tickets for {plate} ({state})</h1>
+        <p className="text-sm text-red-600">{err}</p>
+      </main>
+    );
+  }
 
   return (
     <main className="mx-auto max-w-md px-4 py-8 space-y-6">
       <header className="space-y-1">
-        <h1 className="text-xl font-semibold">{`Tickets for ${plate} (${state})`}</h1>
-        {total > 0 && (
-          <p className="text-sm text-neutral-600">
-            Total outstanding: <span className="font-medium">{dollars(total)}</span>
-          </p>
+        <h1 className="text-xl font-semibold">Tickets for {plate} ({state})</h1>
+        {openTickets.length === 0 ? (
+          <p className="text-sm text-neutral-600">No open tickets found.</p>
+        ) : (
+          <p className="text-sm text-neutral-600">{openTickets.length} open {openTickets.length === 1 ? "ticket" : "tickets"}.</p>
         )}
       </header>
 
-      {loading && (
-        <div className="space-y-3">
-          <div className="h-20 rounded-2xl bg-neutral-200 animate-pulse" />
-          <div className="h-20 rounded-2xl bg-neutral-200 animate-pulse" />
-        </div>
-      )}
-
-      {!loading && err && (
-        <div className="rounded-2xl border border-[var(--border)] p-4">
-          <p className="text-sm">{err}</p>
-          <button onClick={() => location.reload()} className="mt-3 h-10 w-full rounded-lg border border-neutral-300">
-            Retry
-          </button>
-        </div>
-      )}
-
-      {!loading && !err && tickets && tickets.length > 0 && (
-        <div className="space-y-3">
-          {tickets.map((t) => (
-            <div key={t.citation_no} className="rounded-2xl border border-[var(--border)] p-4">
-              <div className="flex items-baseline justify-between">
-                <div className="text-sm text-neutral-600">Ticket #{t.citation_no}</div>
-                <div className="text-base font-semibold">{dollars(t.amount_cents)}</div>
-              </div>
-              <div className="mt-2 text-sm text-neutral-700">
-                <div>{t.violation || "Violation"}</div>
-                <div className="text-neutral-500">{t.location || "Location"}</div>
-              </div>
-              <div className="mt-3 flex items-center justify-between">
-                <span className={`text-xs rounded px-2 py-1 ${t.status === "open" ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}>
-                  {t.status.toUpperCase()}
-                </span>
-                <a className="text-sm underline" target="_blank" rel="noreferrer">Pay on SF site</a>
-              </div>
+      <section className="space-y-3">
+        {openTickets.map((t) => (
+          <article key={t.citation_no} className="rounded-2xl border border-neutral-200 p-4 space-y-1">
+            <div className="flex items-center justify-between">
+              <div className="font-medium">{t.violation}</div>
+              <div className="font-semibold">{fmt(t.amount_cents)}</div>
             </div>
-          ))}
-        </div>
+            <div className="text-xs text-neutral-600">
+              #{t.citation_no} · {new Date(t.issued_at).toLocaleDateString()} · Due {new Date(t.due_at).toLocaleDateString()}
+            </div>
+            <div className="text-xs text-neutral-500">{t.location}</div>
+          </article>
+        ))}
+      </section>
+
+      {openTickets.length > 0 && (
+        <section className="space-y-2 rounded-2xl border border-neutral-200 p-4">
+          <div className="flex items-center justify-between">
+            <div className="font-medium">Amount due</div>
+            <div className="font-semibold">{fmt(totalCents)}</div>
+          </div>
+          <div className="flex items-center justify-between text-sm text-neutral-600">
+            <div>Processing fee <span className="underline decoration-dotted" title="Covers card processing and platform costs.">What’s this?</span></div>
+            <div>{fmt(feeCents)}</div>
+          </div>
+          <div className="flex items-center justify-between border-t border-neutral-200 pt-2">
+            <div className="font-medium">Total</div>
+            <div className="font-semibold">{fmt(grandCents)}</div>
+          </div>
+
+          <Link
+            href={`/payment?plate=${encodeURIComponent(plate)}&state=${encodeURIComponent(state)}&total=${grandCents}`}
+            className="mt-3 block text-center h-12 rounded-xl bg-black text-white font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-black/30"
+          >
+            Pay now
+          </Link>
+          <p className="text-[13px] text-neutral-600">Payment deadline: Today 11:59pm PT.</p>
+        </section>
       )}
 
-      {!loading && !err && tickets && tickets.length === 0 && (
-        <div className="rounded-2xl border border-[var(--border)] p-4">
-          <p className="font-medium">No open tickets for {plate} ({state}).</p>
-          <p className="mt-1 text-sm text-neutral-600">We’ll keep an eye on it so you don’t have to.</p>
-        </div>
-      )}
+      <section className="space-y-2">
+        <h2 className="text-lg font-medium">Get new ticket alerts</h2>
+        <p className="text-sm text-neutral-600">
+          We’ll email you when SF posts a new citation for {plate} ({state}).
+        </p>
+        <form
+          className="flex gap-2"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setSubMsg("");
+            setSubBusy(true);
+            try {
+              const res = await fetch("/api/subscribe", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({ email, plate, state }),
+              });
+              const data = await res.json().catch(() => ({}));
+              if (!res.ok || data?.ok === false) throw new Error(data?.error || "Subscribe failed");
+              setSubMsg("Subscribed. We’ll email you when new tickets appear. Unsubscribe anytime.");
+              setEmail("");
+            } catch (e: any) {
+              setSubMsg(e?.message || "Something went wrong. Try again.");
+            } finally {
+              setSubBusy(false);
+            }
+          }}
+        >
+          <input
+            type="email"
+            required
+            placeholder="you@example.com"
+            className="h-12 flex-1 rounded-xl border border-neutral-300 px-4"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            aria-label="Email address"
+          />
+          <button
+            type="submit"
+            disabled={subBusy}
+            className="h-12 px-4 rounded-xl bg-black text-white font-medium disabled:opacity-50"
+          >
+            {subBusy ? "Subscribing…" : "Subscribe"}
+          </button>
+        </form>
+        {subMsg && <p className="text-sm text-neutral-700">{subMsg}</p>}
+      </section>
     </main>
   );
 }

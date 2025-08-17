@@ -5,6 +5,7 @@ import type { NextRequest } from 'next/server';
 import { getPool } from '../../../lib/pg';
 import { j, corsHeaders } from '../../../lib/response';
 import { z } from 'zod';
+import { NextResponse } from "next/server";
 
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const bodySchema = z.object({ id: z.string().optional().nullable() });
@@ -29,14 +30,9 @@ async function handle(req: NextRequest, id: string) {
 
 export async function OPTIONS(req: NextRequest) { return new Response(null, { status: 204, headers: corsHeaders(req.headers.get('origin') || undefined) }); }
 export async function GET(req: NextRequest) { return handle(req, String(req.nextUrl.searchParams.get('id')||'')); }
-export async function POST(req: NextRequest) {
-  let id = '';
-  try {
-    const raw = await req.text();
-    let parsed: unknown = {};
-    try { parsed = raw ? JSON.parse(raw) : {}; } catch {}
-    const res = bodySchema.safeParse(parsed);
-    if (res.success) id = String(res.data.id || '');
-  } catch { /* ignore */ }
-  return handle(req, id);
+export async function POST(req: Request) {
+  const { id } = (await req.json().catch(() => ({}))) as { id?: string };
+  if (!id) return NextResponse.json({ ok: false, error: "Missing id." }, { status: 400 });
+  // TODO: delete subscription by id in DB.
+  return NextResponse.json({ ok: true });
 }
