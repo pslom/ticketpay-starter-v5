@@ -5,8 +5,19 @@ import { useSearchParams } from 'next/navigation';
 
 function PaymentInner() {
   const sp = useSearchParams();
-  const ticketId = sp.get('ticket') || '';
-  const amountCents = Number(sp.get('amount_cents') || '0');
+
+  // Accept both old and new param names
+  const ticketId =
+    sp.get('ticket') ??
+    sp.get('plate') ?? // fallback
+    '';
+
+  const amountCents = Number(
+    sp.get('amount_cents') ??
+    sp.get('total') ?? // fallback
+    '0'
+  );
+
   const amount = (amountCents / 100).toFixed(2);
 
   const [email, setEmail] = useState('');
@@ -44,7 +55,7 @@ function PaymentInner() {
     <main className="mx-auto max-w-xl px-4 py-10">
       <h1 className="text-2xl font-semibold">Pay Ticket</h1>
       <p className="mt-2 text-sm text-gray-600">
-        Ticket ID: <span className="font-mono">{ticketId || '—'}</span>
+        Ticket: <span className="font-mono">{ticketId || '—'}</span>
       </p>
 
       <form onSubmit={onPay} className="mt-8 space-y-6">
