@@ -130,3 +130,10 @@ export const ConfirmCopy = {
   sendTest: "Send me a test",
   testSent: "Test sent! Check your inbox or phone."
 };
+
+// Minimal keys referenced by onboarding components
+export const COPY = {
+  selectChannel: "How should we alert you?",
+  whereSend: "Where should we send alerts?",
+  setReminders: "Set reminders",
+};

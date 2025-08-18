@@ -4,16 +4,21 @@ import DueDateCard from "@/components/DueDateCard";
 import { ConfirmCopy } from "@/lib/copy";
 import ConfirmClient from "./ConfirmClient";
 
+type SearchParams = Record<string, string | string[] | undefined>;
+
 export default async function ConfirmPage({
   searchParams,
 }: {
-  searchParams: { email?: string; phone?: string; preview?: string; plate?: string; state?: string };
+  searchParams: Promise<SearchParams>;
 }) {
-  const email = (searchParams.email ?? "").trim();
-  const phone = (searchParams.phone ?? "").trim();
-  const plate = (searchParams.plate ?? "").trim();
-  const state = (searchParams.state ?? "").trim();
-  const visible = searchParams.preview === "1" || process.env.NEXT_PUBLIC_SHOW_PREVIEW_TEST === "1";
+  const sp = await searchParams;
+  const pick = (v?: string | string[]) => (Array.isArray(v) ? (v[0] || "") : (v || ""));
+
+  const email = pick(sp.email).trim();
+  const phone = pick(sp.phone).trim();
+  const plate = pick(sp.plate).trim();
+  const state = pick(sp.state).trim();
+  const visible = pick(sp.preview) === "1" || process.env.NEXT_PUBLIC_SHOW_PREVIEW_TEST === "1";
 
   // Server-side fetch of SF estimate (if plate present)
   let dueAt: string | undefined;

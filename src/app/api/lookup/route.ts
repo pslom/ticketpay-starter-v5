@@ -1,3 +1,5 @@
+import { lookupSchema } from "@/lib/validation";
+
 export const dynamic = "force-dynamic";
 
 type Ticket = {
@@ -21,16 +23,25 @@ const norm = (s:string)=> (s||"").toUpperCase().replace(/\s+/g,"");
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json().catch(()=> ({}));
-    const plate = norm(body.plate);
-    const state = norm(body.state);
-    if (!/^[A-Z0-9]{2,10}$/.test(plate) || !/^[A-Z]{2,3}$/.test(state)) {
-      return Response.json({ ok:false, error:"Invalid plate/state." }, { status:400 });
+    const raw = await req.json().catch(() => null);
+    const parsed = lookupSchema.safeParse(raw);
+    if (!parsed.success) {
+      return Response.json(
+        {
+          ok: false,
+          error: "invalid_body",
+          issues: parsed.error.issues.map((i) => ({ path: i.path, message: i.message })),
+        },
+        { status: 400 },
+      );
     }
+    const { plate, state, city } = parsed.data;
+
     const key = `${state}|${plate}`;
     const tickets = MOCK[key] ?? [];
     return Response.json({ ok:true, tickets }, { status:200 });
-  } catch {
-    return Response.json({ ok:false, error:"Lookup temporarily unavailable." }, { status:500 });
+  } catch (e: unknown) {
+    const err = e instanceof Error ? e : new Error(String(e));
+    return Response.json({ ok: false, error: err.message }, { status: 500 });
   }
 }

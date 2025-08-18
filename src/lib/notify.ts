@@ -12,7 +12,7 @@ export async function sendEmail(
   const key = process.env.SENDGRID_API_KEY;
   const from = process.env.SENDGRID_FROM || process.env.EMAIL_FROM_ADDRESS; // fallback supported
   if (!key || !from) {
-    return { ok: false, skipped: true, reason: 'sendgrid_env_missing' };
+    return { ok: false, skipped: true as const, reason: 'sendgrid_env_missing' };
   }
 
   const body = {
@@ -41,9 +41,9 @@ export async function sendEmail(
 export async function sendSms(to: string, body: string) {
   const sid = process.env.TWILIO_ACCOUNT_SID;
   const token = process.env.TWILIO_AUTH_TOKEN;
-  const from = process.env.TWILIO_PHONE_NUMBER;
+  const from = process.env.TWILIO_FROM; // align with rest of codebase
   if (!sid || !token || !from) {
-    return { ok: false, skipped: true, reason: 'twilio_env_missing' };
+    return { ok: false, skipped: true as const, reason: 'twilio_env_missing' };
   }
 
   const r = await fetch(
@@ -61,4 +61,33 @@ export async function sendSms(to: string, body: string) {
   );
 
   return { ok: r.status >= 200 && r.status < 300, status: r.status };
+}
+
+// Preview helpers expected by routes
+export async function sendEmailPreview(to: string) {
+  const subject = 'TicketPay — example alert';
+  const text = 'TicketPay: New ticket — $65 · No Parking · Mission & 16th. Pay: https://example.invalid';
+  const html = `<p>${text}</p>`;
+  return sendEmail(to, subject, text, html);
+}
+
+export async function sendSmsPreview(to: string) {
+  const body = 'TicketPay: New ticket — $65 · No Parking · Mission & 16th. Pay: https://example.invalid';
+  return sendSms(to, body);
+}
+
+// Notifier factory expected by core route
+type NotifyParams =
+  | { channel: 'email'; to: string; subject: string; text: string; html?: string }
+  | { channel: 'sms'; to: string; text: string };
+
+export function createNotifier() {
+  return {
+    async notify(p: NotifyParams) {
+      if (p.channel === 'email') {
+        return sendEmail(p.to, p.subject, p.text, p.html);
+      }
+      return sendSms(p.to, p.text);
+    },
+  };
 }

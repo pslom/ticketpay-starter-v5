@@ -25,25 +25,25 @@ export default function ContactInputs({
     >
       <h3 className="text-lg font-semibold">{COPY.whereSend}</h3>
 
-      {(mode === "email" || mode === "both") && (
+    {(mode === "email" || mode === "both") && (
         <input
           type="email"
           placeholder="Enter your email address"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="w-full rounded-lg border border-gray-300 px-3 py-2"
-          required={mode !== "sms"}
+      required={mode === "email" || mode === "both"}
         />
       )}
 
-      {(mode === "sms" || mode === "both") && (
+    {(mode === "sms" || mode === "both") && (
         <input
           type="tel"
           placeholder="Enter your phone number"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           className="w-full rounded-lg border border-gray-300 px-3 py-2"
-          required={mode !== "email"}
+      required={mode === "sms" || mode === "both"}
         />
       )}
 
