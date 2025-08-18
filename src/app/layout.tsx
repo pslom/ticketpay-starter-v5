@@ -38,11 +38,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </header>
         <main id="main">{children}</main>
         <footer className="mx-auto max-w-4xl px-4 py-10 text-sm text-neutral-600">
-          <div className="flex items-center justify-between">
-            <p>© TicketPay • Made in San Francisco</p>
-            <a href="/support" className="underline">
-              Support
-            </a>
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <p>© {new Date().getFullYear()} TicketPay</p>
+            <nav className="flex items-center gap-4">
+              <a href="/privacy" className="underline">Privacy</a>
+              <a href="/terms" className="underline">Terms</a>
+              <a href="mailto:support@ticketpay.us.com" className="underline">Support</a>
+            </nav>
           </div>
         </footer>
       </body>
