@@ -10,6 +10,8 @@ const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono"
 export const metadata: Metadata = {
   title: { default: "TicketPay", template: "%s • TicketPay" },
   description: "Real-time parking ticket alerts for San Francisco.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || "https://www.ticketpay.us.com"),
+  alternates: { canonical: "/" },
   icons: {
     icon: "/icon.svg",
     other: [{ rel: "mask-icon", url: "/safari-pinned-tab.svg", color: "#111827" }],
@@ -36,11 +38,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </header>
         <main id="main">{children}</main>
         <footer className="mx-auto max-w-4xl px-4 py-10 text-sm text-neutral-600">
-          <div className="flex items-center justify-between">
-            <p>© TicketPay • Made in San Francisco</p>
-            <a href="/support" className="underline">
-              Support
-            </a>
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <p>© {new Date().getFullYear()} TicketPay</p>
+            <nav className="flex items-center gap-4">
+              <a href="/privacy" className="underline">Privacy</a>
+              <a href="/terms" className="underline">Terms</a>
+              <a href="mailto:support@ticketpay.us.com" className="underline">Support</a>
+            </nav>
           </div>
         </footer>
       </body>

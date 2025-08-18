@@ -27,3 +27,16 @@ created_at timestamptz not null default now()
 create unique index if not exists citations_unique_key on citations (plate_normalized, state, citation_number, city);
 create index if not exists idx_citations_plate_state on citations (plate_normalized, state);
 create index if not exists idx_subscriptions_plate_state on subscriptions (plate_normalized, state);
+
+-- events for product analytics
+create table if not exists events (
+  id uuid primary key default gen_random_uuid(),
+  ts timestamptz not null default now(),
+  session_id text,
+  user_ref text,
+  event text not null,
+  payload jsonb
+);
+
+create index if not exists events_ts_idx on events(ts);
+create index if not exists events_event_idx on events(event);

@@ -55,3 +55,9 @@ supabase-ca.pem
 .next-dev.log
 .next-dev.pid
 dev.log
+
+# Build artifacts
+.next/
+tsconfig.tsbuildinfo
+.next-dev.log
+
