@@ -11,6 +11,13 @@ export default function ConfirmPage() {
     track("subscription_confirm_view");
   }
 
+  function showPreviewFlag() {
+    if (typeof window === "undefined") return false;
+    const u = new URL(window.location.href);
+    if (u.searchParams.get("preview") === "1") return true; // manual override
+    return process.env.NEXT_PUBLIC_SHOW_PREVIEW_TEST === "1";
+  }
+
   return (
     <main className="mx-auto max-w-2xl p-6 space-y-6">
       <header className="space-y-1">
@@ -20,7 +27,8 @@ export default function ConfirmPage() {
 
       <section aria-labelledby="preview-heading">
         <h2 id="preview-heading" className="sr-only">{ConfirmCopy.previewTitle}</h2>
-        <PreviewBlock /* email={email} phone={phone} */ />
+        {/* <PreviewBlock email={email} phone={phone} /> */}
+        <PreviewBlock email={email} phone={phone} visible={showPreviewFlag()} />
       </section>
 
       <div className="flex gap-3">

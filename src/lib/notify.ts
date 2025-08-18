@@ -1,6 +1,6 @@
 // src/lib/notify.ts
 
-import fetch from 'node-fetch';
+// Using global fetch provided by Next.js runtime
 
 // Send Email via SendGrid
 export async function sendEmail(
