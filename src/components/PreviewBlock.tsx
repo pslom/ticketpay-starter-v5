@@ -1,30 +1,36 @@
 "use client";
+
 import { useState } from "react";
-import { COPY } from "@/lib/copy";
+import { ConfirmCopy } from "@/lib/copy";
+// optional: track analytics
+// import { track } from "@/lib/track";
 
 export default function PreviewBlock({ email, phone }: { email?: string; phone?: string }) {
   const [msg, setMsg] = useState<string>("");
 
   async function send() {
     setMsg("Sending…");
-    const r = await fetch("/api/send-test", {
+    const res = await fetch("/api/send-test", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ email, phone }),
     });
-    const j = await r.json();
-    setMsg(j.ok ? COPY.testSent : "Could not send test right now.");
+    const j = await res.json();
+    setMsg(j.ok ? ConfirmCopy.testSent : "Could not send test right now.");
+
+    // optional analytics
+    // track("preview_test_sent", { channel: email ? "email" : phone ? "sms" : "unknown" });
   }
 
   return (
     <div className="rounded-xl border border-gray-200 p-4">
       <div className="flex items-center justify-between">
         <div>
-          <p className="font-medium">{COPY.previewTitle}</p>
-          <p className="text-sm text-gray-500">{COPY.previewHelp}</p>
+          <p className="font-medium">{ConfirmCopy.previewTitle}</p>
+          <p className="text-sm text-gray-500">{ConfirmCopy.previewHelp}</p>
         </div>
         <button onClick={send} className="px-3 py-2 rounded-lg bg-black text-white">
-          {COPY.sendTest}
+          {ConfirmCopy.sendTest}
         </button>
       </div>
       {msg && <p className="mt-2 text-sm">{msg}</p>}
