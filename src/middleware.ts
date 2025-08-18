@@ -128,8 +128,8 @@ export async function middleware(req: NextRequest) {
     return addSecurityHeaders(redirect);
   }
 
-  // 2) Canonical host redirect — DISABLED by default to avoid loops.
-  if (ENFORCE_CANONICAL && rawHost && rawHost !== CANONICAL_HOST) {
+  // 2) Canonical host redirect — only enforce in production to avoid dev/preview loops
+  if (!DEV && ENFORCE_CANONICAL && rawHost && rawHost !== CANONICAL_HOST) {
     const canonURL = new URL(url.toString());
     canonURL.hostname = CANONICAL_HOST;
     canonURL.protocol = "https:";
