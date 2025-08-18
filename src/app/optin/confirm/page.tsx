@@ -1,36 +1,45 @@
 // src/app/optin/confirm/page.tsx
-"use client";
-
-import PreviewBlock from "@/components/PreviewBlock";
+import Link from "next/link";
+import DueDateCard from "@/components/DueDateCard";
 import { ConfirmCopy } from "@/lib/copy";
-import { track } from "@/lib/track";
+import ConfirmClient from "./ConfirmClient";
 
-function readDestFromUrl() {
-  if (typeof window === "undefined") {
-    return { email: undefined as string | undefined, phone: undefined as string | undefined };
+export default async function ConfirmPage({
+  searchParams,
+}: {
+  searchParams: { email?: string; phone?: string; preview?: string; plate?: string; state?: string };
+}) {
+  const email = (searchParams.email ?? "").trim();
+  const phone = (searchParams.phone ?? "").trim();
+  const plate = (searchParams.plate ?? "").trim();
+  const state = (searchParams.state ?? "").trim();
+  const visible = searchParams.preview === "1" || process.env.NEXT_PUBLIC_SHOW_PREVIEW_TEST === "1";
+
+  // Server-side fetch of SF estimate (if plate present)
+  let dueAt: string | undefined;
+  let lateFeeAt: string | undefined;
+  let issuedAt: string | undefined;
+  let estimated: boolean | undefined;
+
+  if (plate) {
+    const u = new URL(`${process.env.BASE_URL || "http://127.0.0.1:3000"}/api/tickets/sf/lookup`);
+    u.searchParams.set("plate", plate);
+    if (state) u.searchParams.set("state", state);
+    const r = await fetch(u, { cache: "no-store" });
+    const j = (await r.json().catch(() => ({}))) as {
+      ok?: boolean;
+      dueAt?: string;
+      lateFeeAt?: string;
+      issuedAt?: string;
+      estimated?: boolean;
+    };
+    if (j?.ok) {
+      dueAt = j.dueAt;
+      lateFeeAt = j.lateFeeAt;
+      issuedAt = j.issuedAt;
+      estimated = j.estimated;
+    }
   }
-  const u = new URL(window.location.href);
-  return {
-    email: u.searchParams.get("email") || undefined,
-    phone: u.searchParams.get("phone") || undefined,
-  };
-}
-
-function showPreviewFlag() {
-  if (typeof window === "undefined") return false;
-  const u = new URL(window.location.href);
-  if (u.searchParams.get("preview") === "1") return true; // manual override
-  return process.env.NEXT_PUBLIC_SHOW_PREVIEW_TEST === "1"; // dev-only env flag
-}
-
-export default function ConfirmPage() {
-  // fire-and-forget analytics on mount (noop on server)
-  if (typeof window !== "undefined") {
-    try { track("subscription_confirm_view"); } catch {}
-  }
-
-  const { email, phone } = readDestFromUrl();
-  const visible = showPreviewFlag();
 
   return (
     <main className="mx-auto max-w-2xl p-6 space-y-6">
@@ -39,27 +48,47 @@ export default function ConfirmPage() {
         <p className="text-gray-600">{ConfirmCopy.subtitle}</p>
       </header>
 
-      <section aria-labelledby="preview-heading">
-        <h2 id="preview-heading" className="sr-only">{ConfirmCopy.previewTitle}</h2>
-        <PreviewBlock email={email} phone={phone} visible={visible} />
-      </section>
+      {dueAt && (
+        <DueDateCard
+          dueAt={dueAt}
+          lateFeeAt={lateFeeAt}
+          issuedAt={issuedAt}
+          estimated={estimated}
+        />
+      )}
 
-      <div className="flex gap-3">
-        <a
-          href="/"
-          className="px-4 py-2 rounded-lg bg-emerald-600 text-white"
-          onClick={() => typeof window !== "undefined" && track("cta_add_another_ticket_click")}
-        >
-          {ConfirmCopy.addAnother}
-        </a>
-        <a
-          href="/share"
-          className="px-4 py-2 rounded-lg border border-gray-300"
-          onClick={() => typeof window !== "undefined" && track("cta_share_click")}
-        >
-          {ConfirmCopy.share}
-        </a>
-      </div>
+      {/* This client component handles the actual confirm UX */}
+      <ConfirmClient email={email} phone={phone} visible={visible} />
+
+      {/* Success CTAs (safe to always show; harmless if user re-visits) */}
+      <section className="rounded-2xl border border-gray-200 bg-white p-5">
+        <h2 className="text-lg font-semibold">What’s next?</h2>
+        <p className="mt-1 text-sm text-gray-600">
+          You’re set. We’ll keep you updated until it’s resolved.
+        </p>
+
+        <div className="mt-4 flex flex-col sm:flex-row gap-3">
+          <Link
+            href="/"
+            className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white text-center"
+          >
+            Add another plate
+          </Link>
+          <Link
+            href="/manage"
+            className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-center"
+          >
+            Manage alerts
+          </Link>
+        </div>
+
+        <p className="mt-3 text-xs text-gray-500">
+          You can unsubscribe anytime. See{" "}
+          <a href="/privacy" className="underline">Privacy</a> and{" "}
+          <a href="/terms" className="underline">Terms</a>. For help, email{" "}
+          <a href="mailto:support@ticketpay.us.com" className="underline">support@ticketpay.us.com</a>.
+        </p>
+      </section>
     </main>
   );
 }
