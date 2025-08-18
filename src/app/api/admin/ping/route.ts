@@ -20,13 +20,18 @@ function readToken(req: NextRequest): string {
 }
 
 export async function GET(req: NextRequest) {
-  if (!process.env.ADMIN_TOKEN) return j(500, { ok:false, error:'env_missing_ADMIN_TOKEN' });
-  const token = readToken(req);
-  if (token !== process.env.ADMIN_TOKEN) return j(401, { ok:false, error:'unauthorized' });
+  try {
+    if (!process.env.ADMIN_TOKEN) return j(500, { ok:false, error:'env_missing_ADMIN_TOKEN' });
+    const token = readToken(req);
+    if (token !== process.env.ADMIN_TOKEN) return j(401, { ok:false, error:'unauthorized' });
 
-  return j(200, {
-    ok: true,
-    runtime: 'nodejs',
-    time: new Date().toISOString()
-  });
+    return j(200, {
+      ok: true,
+      runtime: 'nodejs',
+      time: new Date().toISOString()
+    });
+  } catch (e: unknown) {
+    const err = e instanceof Error ? e : new Error(String(e));
+    return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
+  }
 }

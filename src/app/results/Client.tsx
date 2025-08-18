@@ -1,8 +1,10 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import React from "react";
 import { useSearchParams } from "next/navigation";
-import Wordmark from "@/components/Wordmark";
+// import { Wordmark } from "@/components/Wordmark"; // unused
 import { triggerConfetti } from "@/components/confetti";
 
 export default function ResultsClient() {

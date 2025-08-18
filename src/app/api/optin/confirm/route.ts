@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/optin";
 
 export async function GET(req: NextRequest) {
@@ -6,7 +6,6 @@ export async function GET(req: NextRequest) {
     const token = req.nextUrl.searchParams.get("token") || "";
     const d = verifyToken(token);
 
-    // Hit the existing subscribe API to persist
     const r = await fetch(`${process.env.BASE_URL || "http://127.0.0.1:3000"}/api/subscribe`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -17,7 +16,8 @@ export async function GET(req: NextRequest) {
     if (!r.ok || !j?.ok) throw new Error(j?.error || `subscribe_failed_${r.status}`);
 
     return Response.json({ ok: true, plate: d.plate, state: d.state, channel: d.channel, value: d.value });
-  } catch (e: any) {
-    return Response.json({ ok: false, error: e?.message || "invalid_token" }, { status: 400 });
+  } catch (e: unknown) {
+    const err = e instanceof Error ? e : new Error(String(e));
+    return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }

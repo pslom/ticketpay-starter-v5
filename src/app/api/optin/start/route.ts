@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { makeToken, PendingPayload } from "@/lib/optin";
 
 const BASE_URL = process.env.BASE_URL || "https://ticketpay.us.com";
@@ -59,7 +59,8 @@ export async function POST(req: NextRequest) {
     }
 
     return Response.json({ ok: true, confirm_url: confirmUrl });
-  } catch (e: any) {
-    return Response.json({ ok: false, error: e?.message || "server_error" }, { status: 500 });
+  } catch (e: unknown) {
+    const err = e instanceof Error ? e : new Error(String(e));
+    return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }
