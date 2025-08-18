@@ -116,3 +116,20 @@ export function confetti({
 
   requestAnimationFrame(frame);
 }
+
+// Simple, safe confetti trigger (no-op on server)
+export function triggerConfetti(): void {
+  if (typeof window === "undefined") return;
+  // Use global confetti if present
+  try {
+    const w = window as unknown as { confetti?: (o: unknown) => void };
+    if (typeof w.confetti === "function") {
+      w.confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
+      return;
+    }
+  } catch {}
+  // Lazy import canvas-confetti if available
+  import("canvas-confetti")
+    .then((m) => m.default({ particleCount: 120, spread: 70, origin: { y: 0.6 } }))
+    .catch(() => {});
+}

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from "next/link";
 
 type Sub = {
   id: string;
@@ -204,7 +205,7 @@ export default function ManagePage() {
         </div>
 
         <div className="mt-10 text-sm">
-          <a href="/" className="underline">Back to home</a>
+          <Link href="/" className="underline">Back to home</Link>
         </div>
       </section>
 

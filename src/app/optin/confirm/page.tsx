@@ -1,6 +1,7 @@
 'use client';
 
 import React from "react";
+import Link from "next/link";
 
 export default function ConfirmPage() {
   const [state, setState] = React.useState<"pending"|"ok"|"error">("pending");
@@ -37,7 +38,7 @@ export default function ConfirmPage() {
           <h1 className="text-xl font-semibold text-red-900">We couldn’t confirm</h1>
           <p className="mt-1 text-sm text-red-900/80">{msg}</p>
           <div className="mt-4">
-            <a href="/" className="rounded-xl border border-red-300 bg-white px-3 py-2 text-sm">Back to home</a>
+            <Link href="/" className="underline">Back to home</Link>
           </div>
         </div>
       )}
