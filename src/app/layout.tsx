@@ -10,6 +10,8 @@ const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono"
 export const metadata: Metadata = {
   title: { default: "TicketPay", template: "%s • TicketPay" },
   description: "Real-time parking ticket alerts for San Francisco.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || "https://www.ticketpay.us.com"),
+  alternates: { canonical: "/" },
   icons: {
     icon: "/icon.svg",
     other: [{ rel: "mask-icon", url: "/safari-pinned-tab.svg", color: "#111827" }],

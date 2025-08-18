@@ -21,7 +21,6 @@ const ratelimit = redis ? new Ratelimit({ redis, limiter: Ratelimit.fixedWindow(
 const fallbackHits = new Map<string, { count: number; ts: number }>();
 
 function addSecurityHeaders(res: NextResponse) {
-  res.headers.set("Strict-Transport-Security", "max-age=15552000; includeSubDomains; preload");
   res.headers.set("X-Content-Type-Options", "nosniff");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   // TEMP: no CSP until we add nonces; avoids blocking Next.js scripts
