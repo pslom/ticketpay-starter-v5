@@ -1,22 +1,36 @@
+// src/app/optin/confirm/page.tsx
+"use client";
+
 import PreviewBlock from "@/components/PreviewBlock";
 import { ConfirmCopy } from "@/lib/copy";
 import { track } from "@/lib/track";
 
+function readDestFromUrl() {
+  if (typeof window === "undefined") {
+    return { email: undefined as string | undefined, phone: undefined as string | undefined };
+  }
+  const u = new URL(window.location.href);
+  return {
+    email: u.searchParams.get("email") || undefined,
+    phone: u.searchParams.get("phone") || undefined,
+  };
+}
+
+function showPreviewFlag() {
+  if (typeof window === "undefined") return false;
+  const u = new URL(window.location.href);
+  if (u.searchParams.get("preview") === "1") return true; // manual override
+  return process.env.NEXT_PUBLIC_SHOW_PREVIEW_TEST === "1"; // dev-only env flag
+}
+
 export default function ConfirmPage() {
-  // If you have the user’s email/phone in a cookie or search param, pass it to PreviewBlock
-  // const email = ...; const phone = ...;
-
-  // fire-and-forget analytics on mount (RSC-safe no-op if not hydrated)
+  // fire-and-forget analytics on mount (noop on server)
   if (typeof window !== "undefined") {
-    track("subscription_confirm_view");
+    try { track("subscription_confirm_view"); } catch {}
   }
 
-  function showPreviewFlag() {
-    if (typeof window === "undefined") return false;
-    const u = new URL(window.location.href);
-    if (u.searchParams.get("preview") === "1") return true; // manual override
-    return process.env.NEXT_PUBLIC_SHOW_PREVIEW_TEST === "1";
-  }
+  const { email, phone } = readDestFromUrl();
+  const visible = showPreviewFlag();
 
   return (
     <main className="mx-auto max-w-2xl p-6 space-y-6">
@@ -27,8 +41,7 @@ export default function ConfirmPage() {
 
       <section aria-labelledby="preview-heading">
         <h2 id="preview-heading" className="sr-only">{ConfirmCopy.previewTitle}</h2>
-        {/* <PreviewBlock email={email} phone={phone} /> */}
-        <PreviewBlock email={email} phone={phone} visible={showPreviewFlag()} />
+        <PreviewBlock email={email} phone={phone} visible={visible} />
       </section>
 
       <div className="flex gap-3">
