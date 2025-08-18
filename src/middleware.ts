@@ -8,7 +8,7 @@ export const config = {
 };
 
 // Keep these together (no wrapped lines)
-const CANONICAL_HOST = (process.env.CANONICAL_HOST || "ticketpay.us.com").toLowerCase();
+const CANONICAL_HOST = (process.env.CANONICAL_HOST || "www.ticketpay.us.com").toLowerCase();
 const ENFORCE_CANONICAL = (process.env.ENFORCE_CANONICAL ?? "false").toLowerCase() === "true";
 const ADMIN_TOKEN = (process.env.ADMIN_TOKEN || "").trim();
 
