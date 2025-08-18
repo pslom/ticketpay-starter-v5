@@ -6,11 +6,15 @@ import React from "react";
 import { useSearchParams } from "next/navigation";
 // import { Wordmark } from "@/components/Wordmark"; // unused
 import { triggerConfetti } from "@/components/confetti";
+import { useRouter } from "next/navigation";
+import { track } from "@/lib/track";
 
 export default function ResultsClient() {
   const sp = useSearchParams();
   const plate = (sp.get("plate") || "").toUpperCase();
   const state = (sp.get("state") || "CA").toUpperCase();
+  const router = useRouter();
+
 
   React.useEffect(() => {
     const cards = document.querySelectorAll<HTMLElement>('[data-reveal]');
@@ -65,6 +69,11 @@ export default function ResultsClient() {
       <span className="sr-only opacity-100 translate-y-0"></span>
     </main>
   );
+}
+
+function maskPlate(p: string) {
+  // keep last 2 chars: "7ABC123" -> "•••••23"
+  return p.replace(/.(?=.{2})/g, "•");
 }
 
 function Card({ title, desc }: { title: string; desc: string }) {
