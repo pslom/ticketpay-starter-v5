@@ -120,3 +120,13 @@ export const PoliciesCopy = {
     "We aim to meet WCAG 2.1 AA. If you find an issue, please contact support@ticketpay.us.com."
   ]
 };
+export const ConfirmCopy = {
+  title: "All set!",
+  subtitle: "We’ll send updates until this ticket’s handled.",
+  addAnother: "Add another ticket",
+  share: "Share TicketPay",
+  previewTitle: "See how reminders look",
+  previewHelp: "We’ll send a sample so you know exactly what to expect.",
+  sendTest: "Send me a test",
+  testSent: "Test sent! Check your inbox or phone."
+};
