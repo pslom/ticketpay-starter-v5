@@ -1,12 +1,21 @@
+// src/components/PreviewBlock.tsx
 "use client";
 
 import { useState } from "react";
 import { ConfirmCopy } from "@/lib/copy";
-// optional: track analytics
-// import { track } from "@/lib/track";
 
-export default function PreviewBlock({ email, phone }: { email?: string; phone?: string }) {
+export default function PreviewBlock({
+  email,
+  phone,
+  visible = false,
+}: {
+  email?: string;
+  phone?: string;
+  visible?: boolean;
+}) {
   const [msg, setMsg] = useState<string>("");
+
+  if (!visible) return null;
 
   async function send() {
     setMsg("Sending…");
@@ -17,9 +26,6 @@ export default function PreviewBlock({ email, phone }: { email?: string; phone?:
     });
     const j = await res.json();
     setMsg(j.ok ? ConfirmCopy.testSent : "Could not send test right now.");
-
-    // optional analytics
-    // track("preview_test_sent", { channel: email ? "email" : phone ? "sms" : "unknown" });
   }
 
   return (
