@@ -115,8 +115,8 @@ export async function middleware(req: NextRequest) {
 
   const proto = (req.headers.get("x-forwarded-proto") || "").toLowerCase();
 
-  // 1) Force HTTPS only if proto says not https (don’t change host here)
-  if (proto && proto !== "https") {
+  // 1) Force HTTPS in production only, and only if proto says not https (don’t change host here)
+  if (!DEV && proto && proto !== "https") {
     const httpsURL = new URL(url.toString());
     httpsURL.protocol = "https:";
     httpsURL.hostname = rawHost || httpsURL.hostname;
