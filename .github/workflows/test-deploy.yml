@@ -1,0 +1,22 @@
+name: Smoke Test Deployed API
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Curl deployed API
+        env:
+          VERCEL_PROTECTION_BYPASS: ${{ secrets.VERCEL_PROTECTION_BYPASS }}
+          DEPLOY_URL: https://ticketpay-v5-eh9ov85qa-perrys-projects-4549bdeb.vercel.app
+        run: |
+          set -euo pipefail
+          echo "Testing $DEPLOY_URL/api/unsub"
+          curl -sS -i -X POST "$DEPLOY_URL/api/unsub" \
+            -H "x-vercel-protection-bypass: $VERCEL_PROTECTION_BYPASS" \
+            -H 'content-type: application/json' \
+            --data-binary '{"id":""}' | sed -n '1,120p'

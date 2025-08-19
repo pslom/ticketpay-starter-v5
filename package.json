@@ -1,0 +1,51 @@
+{
+  "name": "ticketpay-v5",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3010",
+    "lint": "next lint",
+    "db:push": "node ./scripts/db-init.js",
+    "clean": "rm -rf .next",
+  "typecheck": "npm run clean && next build --no-lint && tsc --noEmit -p tsconfig.json",
+  "smoke:local": "bash ./scripts/smoke-test.sh",
+  "smoke:remote": "bash ./scripts/smoke.sh",
+  "pg:smoke": "node ./scripts/pg-smoke.js",
+  "alerts:enqueue:test": "node ./scripts/alerts-enqueue-test.js"
+  },
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.5",
+    "@sentry/node": "^10.5.0",
+    "@supabase/supabase-js": "^2.55.0",
+    "@upstash/ratelimit": "^2.0.6",
+    "@upstash/redis": "^1.35.3",
+    "canvas-confetti": "^1.9.3",
+    "next": "15.4.6",
+    "pg": "^8.16.3",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "resend": "^6.0.1",
+    "twilio": "^5.8.0",
+    "zod": "^4.0.17"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@eslint/js": "^9.33.0",
+    "@tailwindcss/postcss": "^4.1.12",
+    "@types/node": "^20",
+    "@types/pg": "^8.15.5",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "autoprefixer": "^10.4.21",
+    "dotenv": "^17.2.1",
+    "eslint": "^9.33.0",
+    "eslint-config-next": "15.4.6",
+    "eslint-plugin-next": "^0.0.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.12",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.39.1"
+  }
+}
