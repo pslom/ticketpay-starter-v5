@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import ResultsClient from "./Client";
 
-export const dynamic = "force-dynamic";
+// Disable caching for this route segment (server-only config)
 export const revalidate = 0;
 
 export default function Page() {

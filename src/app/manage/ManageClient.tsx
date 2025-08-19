@@ -2,7 +2,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import TogglePills from "@/components/TogglePills";
+import { ManageCopy, ErrorsCopy } from "@/lib/copy";
 
 type CoreListResponse =
   | { ok: true; subscriptions?: any[]; items?: any[] }
@@ -30,7 +31,9 @@ export default function ManageClient() {
   const [channel, setChannel] = useState<"email" | "sms">("email");
   const [value, setValue] = useState("");
   const [plate, setPlate] = useState("");
-  const [state, setState] = useState("");
+  const [stateVal, setStateVal] = useState("CA");
+  const refresh = () => load();
+  const [ok, setOk] = useState(false);
 
   async function core<T>(op: string, extra?: Record<string, any>): Promise<T> {
     const r = await fetch("/api/core", {
@@ -73,18 +76,21 @@ export default function ManageClient() {
         data = await core<CoreListResponse>("list_subscriptions", { value: v, channel: ch });
       } else {
         const p = plate.trim();
-        const s = state.trim();
+        const s = stateVal.trim();
         if (!p || !s) throw new Error("Enter plate and state");
         data = await core<CoreListResponse>("list_subscriptions", { plate: p, state: s });
       }
       if (!("ok" in data) || !data.ok) {
-        throw new Error((data as any)?.error || (data as any)?.detail || "list failed");
+        const msg = (data as { error?: string })?.error || ErrorsCopy.rateLimit;
+        throw new Error(msg);
       }
       const list = (data.subscriptions ?? data.items ?? []).map(normalize);
       setSubs(list);
+      setOk(true);
     } catch (e: any) {
       setErr(e?.message || "Failed to load alerts");
       setSubs([]);
+      setOk(false);
     } finally {
       setLoading(false);
     }
@@ -93,7 +99,7 @@ export default function ManageClient() {
   useEffect(() => {
     // On first load, try to hydrate from URL query params (?value=&channel= or ?plate=&state=)
     try {
-      const sp = new URLSearchParams(window.location.search);
+  const sp = new URLSearchParams(window.location.search);
       const qpValue = (sp.get("value") || "").trim();
       const qpChannel = (sp.get("channel") || "").trim() as "email" | "sms";
       const qpPlate = (sp.get("plate") || "").trim();
@@ -106,7 +112,7 @@ export default function ManageClient() {
       } else if (qpPlate && qpState) {
         setMode("plate");
         setPlate(qpPlate);
-        setState(qpState);
+        setStateVal(qpState);
         void (async () => { await load(); })();
       } else {
         // No query — show empty state; don't auto-call to avoid validation_error
@@ -139,68 +145,84 @@ export default function ManageClient() {
 
   return (
     <section className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Manage your alerts</h2>
-        <button onClick={() => load()} className="rounded border px-3 py-1.5 text-sm hover:bg-black/5" disabled={loading}>
-          {loading ? "Refreshing…" : "Refresh"}
-        </button>
-      </div>
-
       {/* Lookup controls */}
-      <div className="rounded border p-3 space-y-3">
-        <div className="flex gap-4 text-sm">
-          <label className="inline-flex items-center gap-2">
-            <input type="radio" name="mode" value="contact" checked={mode === "contact"} onChange={() => setMode("contact")} />
-            <span>By contact</span>
-          </label>
-          <label className="inline-flex items-center gap-2">
-            <input type="radio" name="mode" value="plate" checked={mode === "plate"} onChange={() => setMode("plate")} />
-            <span>By plate/state</span>
-          </label>
+      <div className="rounded border p-3">
+        <div className="flex items-center justify-between gap-4">
+          <TogglePills
+            value={mode}
+            onChange={(v) => setMode(v as any)}
+            options={[
+              { label: ManageCopy.modeContact, value: "contact" },
+              { label: ManageCopy.modePlate, value: "plate" },
+            ]}
+          />
         </div>
 
         {mode === "contact" ? (
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-            <div className="flex items-center gap-2">
-              <label className="inline-flex items-center gap-2 text-sm">
-                <input type="radio" name="channel" value="email" checked={channel === "email"} onChange={() => setChannel("email")} />
-                <span>Email</span>
+          <>
+            <label className="block mt-4 text-sm font-medium">Channel</label>
+            <TogglePills
+              className="mt-2"
+              value={channel}
+              onChange={(v) => setChannel(v as any)}
+              options={[
+                { label: ManageCopy.channelEmail, value: "email" },
+                { label: ManageCopy.channelSms, value: "sms" },
+              ]}
+            />
+            <div className="mt-4">
+              <label className="text-sm font-medium" htmlFor="contact">
+                {channel === "email" ? "Email address" : "Mobile number"}
               </label>
-              <label className="inline-flex items-center gap-2 text-sm">
-                <input type="radio" name="channel" value="sms" checked={channel === "sms"} onChange={() => setChannel("sms")} />
-                <span>SMS</span>
-              </label>
+              <input
+                id="contact"
+                className="tp-input mt-1"
+                placeholder={channel === "email" ? ManageCopy.inputContactPlaceholder : "(415) 555-0123"}
+                inputMode={channel === "email" ? "email" : "tel"}
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                required
+              />
+              <div className="mt-3">
+                <button onClick={load} className="tp-btn" disabled={loading}>
+                  Find
+                </button>
+              </div>
             </div>
-            <input
-              className="w-full max-w-sm rounded border px-3 py-2"
-              placeholder={channel === "email" ? "you@example.com" : "(415) 555-0123"}
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              inputMode={channel === "email" ? "email" : "tel"}
-            />
-            <button onClick={() => load()} className="rounded border px-3 py-2 text-sm hover:bg-black/5" disabled={loading}>
-              Find
-            </button>
-          </div>
+          </>
         ) : (
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-            <input
-              className="w-full max-w-xs rounded border px-3 py-2"
-              placeholder="Plate"
-              value={plate}
-              onChange={(e) => setPlate(e.target.value)}
-            />
-            <input
-              className="w-full max-w-[8rem] rounded border px-3 py-2"
-              placeholder="State"
-              value={state}
-              onChange={(e) => setState(e.target.value)}
-            />
-            <button onClick={() => load()} className="rounded border px-3 py-2 text-sm hover:bg-black/5" disabled={loading}>
-              Find
-            </button>
+          <div className="mt-4">
+            <label className="text-sm font-medium" htmlFor="plate">Plate / State</label>
+            <div className="grid grid-cols-[1fr_auto] gap-3">
+              <input
+                id="plate"
+                className="tp-input mt-1"
+                placeholder={ManageCopy.inputPlatePlaceholder}
+                value={plate}
+                onChange={(e) => setPlate(e.target.value)}
+              />
+              <select
+                className="tp-input w-28 mt-1"
+                value={stateVal}
+                onChange={(e) => setStateVal(e.target.value)}
+              >
+                <option>CA</option>
+              </select>
+            </div>
+            <div className="mt-3">
+              <button onClick={load} className="tp-btn" disabled={loading}>
+                Find
+              </button>
+            </div>
           </div>
         )}
+      </div>
+
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-medium">{ManageCopy.listTitle}</h2>
+        <button onClick={refresh} className="rounded-full border px-3 py-1.5 text-sm" disabled={loading}>
+          {ManageCopy.refresh}
+        </button>
       </div>
 
       {err && (
@@ -211,13 +233,10 @@ export default function ManageClient() {
 
       {loading && !subs && <p className="text-neutral-600">Loading your alerts…</p>}
 
-  {subs && rows.length === 0 && (
-        <div className="rounded-md border p-4 text-sm">
-          <p>You don’t have any active alerts yet.</p>
-          <p className="mt-2">
-            <Link href="/" className="underline">Set up a reminder</Link>
-          </p>
-        </div>
+  {subs && rows.length === 0 && !loading && !err && !ok && (
+        <p className="mt-2 text-sm text-gray-600">
+          {ManageCopy.noneTitle} {ManageCopy.noneBody}
+        </p>
       )}
 
       {rows.length > 0 && (

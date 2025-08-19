@@ -1,6 +1,19 @@
 @import "tailwindcss";
 @source "./src";
 
+/* Tailwind v4 theme tokens for TicketPay */
+@theme {
+  --color-tp-green: #0F5A37;       /* primary */
+  --color-tp-green-dark: #0B472C;  /* gradient end */
+  --color-tp-green-hue: #106240;   /* hover hue */
+  --color-tp-off: #F7F5F2;         /* warm card background */
+
+  --shadow-card: 0 8px 24px rgba(16, 30, 25, 0.12);
+
+  --radius-2xl: 1rem;
+  --radius-xl2: 1.25rem;
+}
+
 /* Brand tokens (Stripe-clean, trustworthy) */
 :root{
   --bg:#ffffff;
@@ -120,3 +133,16 @@ a{color:inherit}
   position:absolute; width:8px; height:12px; border-radius:2px; opacity:.9;
   animation: confetti-fall 800ms ease-out forwards;
 }
+
+/* TicketPay utilities */
+@layer utilities {
+  .tp-card { @apply bg-tp-off shadow-card rounded-2xl; }
+  .tp-btn { @apply inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium text-white bg-tp-green transition-colors; }
+  .tp-btn:hover { @apply bg-tp-green-hue; }
+  .tp-input { @apply w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-[16px] outline-none focus:ring-2 focus:ring-emerald-300; }
+  .tp-label { @apply text-[15px] font-medium text-neutral-800 mb-1; }
+  .tp-micro { @apply text-[13px] text-neutral-600; }
+}
+
+@keyframes tpFadeUp { from { opacity: 0; transform: translateY(6px) } to { opacity:1; transform: none } }
+.tp-fade { animation: tpFadeUp .4s ease-out both; }

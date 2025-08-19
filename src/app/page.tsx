@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Aurora from "@/components/Aurora";
-import GradientButton from "@/components/GradientButton";
+import { HomeCopy } from "@/lib/copy";
 
 export default function HomePage() {
   const router = useRouter();
@@ -17,15 +17,13 @@ export default function HomePage() {
       <Aurora />
 
       <section className="animate-in space-y-3">
-        <h1 className="text-5xl font-semibold tracking-tight">Stay ahead of parking tickets</h1>
-        <p className="text-neutral-600 max-w-2xl">
-          Real-time alerts in San Francisco. Enter your plate and we’ll notify you when a new ticket is posted.
-        </p>
+        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight tp-fade">{HomeCopy.heroTitle}</h1>
+        <p className="text-neutral-600 max-w-2xl">{HomeCopy.heroSub}</p>
         <p className="text-sm text-neutral-500">Trusted by San Francisco drivers to avoid late fees.</p>
       </section>
 
-      <div className="mt-8 gradient-border">
-        <div className="inner p-5 sm:p-6">
+      <div className="mt-8">
+        <div className="tp-card w-full max-w-md p-5 tp-fade" style={{ animationDelay: "80ms" }}>
           <form
             className="space-y-4"
             onSubmit={(e) => {
@@ -36,18 +34,18 @@ export default function HomePage() {
           >
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_140px]">
               <label className="space-y-1.5">
-                <span className="text-sm">Plate</span>
+                <span className="text-sm">{HomeCopy.plateLabel}</span>
                 <input
-                  className="h-12 w-full rounded-xl border border-neutral-300 px-4"
-                  placeholder="ABC123"
+                  className="tp-input"
+                  placeholder={HomeCopy.platePlaceholder}
                   value={plate}
                   onChange={(e) => setPlate(e.target.value)}
                 />
               </label>
               <label className="space-y-1.5">
-                <span className="text-sm">State</span>
+                <span className="text-sm">{HomeCopy.stateLabel}</span>
                 <input
-                  className="h-12 w-full rounded-xl border border-neutral-300 px-4 uppercase"
+                  className="tp-input uppercase"
                   placeholder="CA"
                   value={stateVal}
                   onChange={(e) => setStateVal(e.target.value.toUpperCase())}
@@ -57,7 +55,7 @@ export default function HomePage() {
               </label>
             </div>
 
-            <GradientButton type="submit">Get alerts</GradientButton>
+            <button type="submit" className="tp-btn">{HomeCopy.ctaSearch}</button>
 
             <p className="text-[12px] text-neutral-500 flex items-center gap-3">
               <span className="inline-flex items-center gap-1">

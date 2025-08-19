@@ -48,7 +48,7 @@ export default function ContactInputs({
       )}
 
   <button className="inline-flex items-center px-4 py-2 rounded-lg bg-emerald-600 text-white">
-    {ResultsCopy.subscribeCta}
+    {ResultsCopy.ctaSubscribe}
       </button>
     </form>
   );

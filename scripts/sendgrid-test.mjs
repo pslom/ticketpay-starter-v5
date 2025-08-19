@@ -13,8 +13,9 @@ if (fs.existsSync(envLocalPath)) {
 let key = process.env.SENDGRID_API_KEY || '';
 key = key.trim().replace(/^['"]|['"]$/g, ''); // strip surrounding quotes if pasted
 const to = process.argv[2] || process.env.TEST_EMAIL || 'you@example.com';
-const from = process.env.SENDGRID_FROM || process.env.EMAIL_FROM_ADDRESS || 'info@ticketpay.us.com';
-const fromName = process.env.EMAIL_FROM_NAME || 'TicketPay';
+const from = process.env.MAIL_FROM_EMAIL || 'info@ticketpay.us.com';
+const fromName = process.env.MAIL_FROM_NAME || 'TicketPay';
+const replyTo = process.env.MAIL_REPLY_TO || from;
 
 if (!key) {
   console.error("SENDGRID_API_KEY missing");
@@ -26,6 +27,7 @@ try {
   const [resp] = await sgMail.send({
     to,
     from: { email: from, name: fromName },
+    replyTo,
     subject: 'TicketPay test — SendGrid OK',
     text: 'Hello from TicketPay via SendGrid.',
     html: '<strong>Hello from TicketPay via SendGrid.</strong>',

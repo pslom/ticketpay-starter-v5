@@ -1,151 +1,112 @@
-// src/lib/copy.ts
-// ================================================================
-// TicketPay — Central Copy Repository
-// ================================================================
-// Voice & Tone
-// - Clear, human, professional. Short sentences.
-// - Build trust without hype: privacy, security, control.
-// - Emphasize the benefit: never miss a deadline.
-// - Empathetic error copy. Offer a next step where possible.
-// - Avoid teasing payments until it’s on the roadmap.
-// ================================================================
-
 export const Brand = {
   name: "TicketPay",
   city: "San Francisco",
   shortCity: "SF",
 };
 
-// ---------------- Homepage ----------------
 export const HomeCopy = {
   heroTitle: "Never miss a ticket deadline.",
-  heroSub: "Real‑time SF ticket alerts by text or email. Secure, automatic, no spam.",
+  heroSub: "Instant SF ticket alerts by text or email.",
+  benefits: ["Avoid late fees", "Alerts only when it matters"],
   plateLabel: "Plate",
   platePlaceholder: "7ABC123",
   stateLabel: "State",
-  statePlaceholder: "CA",
   ctaSearch: "Get ticket alerts",
-  trustNote: "We only store your plate if you subscribe. Unsubscribe anytime.",
-  faqTitle: "Questions",
-  faq: [
-    {
-      q: "Where does the data come from?",
-      a: "From official City of SF records. We query the same sources the city uses.",
-    },
-    {
-      q: "How fast are alerts?",
-      a: "As soon as a new citation appears in the city feed. Our target is under 5 minutes.",
-    },
-    {
-      q: "Do you take payments?",
-      a: "Not yet. We link you to the city’s secure payment page for now.",
-    },
-    {
-      q: "How do you handle my data?",
-      a: "We keep it minimal. Your plate is only saved if you subscribe, and you can unsubscribe anytime.",
-    },
-  ],
+  microLock: "Unsubscribe anytime.",
+  powered: "Powered by City of SF Data",
 };
 
-// ---------------- Results Page ----------------
 export const ResultsCopy = {
-  headingFound: (plate: string, state: string) => `Tickets for ${plate} (${state})`,
-  headingNone: (plate: string, state: string) => `No open tickets for ${plate} (${state}).`,
-  noneBody: "We’ll keep watch and notify you the moment a ticket appears.",
-  subscribeLead: "Stay ahead of late fees — get instant text or email alerts.",
-  channelLabel: "Alert by",
+  title: "Check your plate & get alerts",
+  lead: (plate: string, state: string) =>
+    `Results for ${plate} (${state}). If a new ticket posts in San Francisco, we’ll notify you instantly.`,
+  subscribeLead: "Choose where to get alerts.",
   channelEmail: "Email",
-  channelSms: "Text",
-  inputEmailPlaceholder: "name@email.com",
-  inputPhonePlaceholder: "415‑555‑0137",
-  subscribeCta: "Set up alerts",
-  subscribeTrust: "Only alerts for this plate. Unsubscribe anytime.",
-  toastSubscribed: (plate: string, state: string) => `You’re set — we’ll alert you about new tickets for ${plate} (${state}).`,
-  toastDuplicate: "Already subscribed for this destination.",
+  channelSms: "SMS",
+  inputEmailPlaceholder: "you@example.com",
+  inputPhonePlaceholder: "(415) 555-0123",
+  ctaSubscribe: "Subscribe",
+  trust:
+    "By subscribing, you agree to receive alerts for this plate. Msg & data rates may apply. Reply STOP to cancel, HELP for help. See our Consent policy.",
+  trustConsentLinkLabel: "Consent policy",
+  toastSubscribed: (p: string, s: string) =>
+    `You're set. We’ll alert you about new tickets for ${p} (${s}).`,
+  toastDuplicate: "You’re already subscribed for this destination.",
   toastError: "Something went wrong. Try again in a minute.",
-  payCta: "Pay on SF site",
-  summaryBar: (count: number, total: string) => `${count} open ${count === 1 ? "ticket" : "tickets"} · Total due ${total}`,
-  ticketLabels: {
-    citation: "Ticket #",
-    amount: "Amount",
-    status: "Status",
-    issued: "Issued",
-    violation: "Violation",
-    location: "Location",
-    due: "Due",
-  },
 };
 
-// ---------------- Confirmation & Share ----------------
 export const ConfirmCopy = {
-  title: "You’re all set!",
-  subtitle: "We’ll send alerts until this ticket is resolved.",
-  addAnother: "Track another plate",
-  share: "Help a friend avoid late fees — Share TicketPay.",
+  title: "You’re set.",
+  subtitle: "We’ll send alerts as soon as a new ticket is posted.",
   previewTitle: "Preview a reminder",
-  previewHelp: "See what a reminder looks like before one arrives.",
+  previewHelp: "Send yourself a sample alert so you know what to expect.",
   sendTest: "Send test alert",
-  testSent: "Test alert sent. Check your inbox or phone.",
+  testSent: "Test alert sent. Check your inbox/phone.",
+  addAnother: "Add another plate",
+  share: "Share TicketPay",
 };
 
-// ---------------- Unsubscribe ----------------
+export const ManageCopy = {
+  title: "Manage alerts",
+  subtitle: "View or remove your active reminders.",
+  modeContact: "By contact",
+  modePlate: "By plate/state",
+  channelEmail: "Email",
+  channelSms: "SMS",
+  inputContactPlaceholder: "you@example.com or (415) 555-0123",
+  inputPlatePlaceholder: "7ABC123",
+  stateLabel: "State",
+  ctaFind: "Find",
+  refresh: "Refresh",
+  noneTitle: "No active alerts yet.",
+  noneBody: "Set one up to get notified instantly.",
+  listTitle: "Your subscriptions",
+};
+
+export const ConsentCopy = {
+  title: "SMS/Text Alert Consent",
+  bullets: [
+    "Message frequency: immediate alerts when a new ticket posts.",
+    "Message and data rates may apply.",
+    "Text STOP to cancel. Text HELP for help.",
+    "Your information is private and will not be sold or shared.",
+    "Support: support@ticketpay.us.com.",
+  ],
+  footer:
+    "Consent is not a condition of purchase. TicketPay is a notification-only public utility and does not accept payments.",
+  proofLinkLabel: "Proof of consent",
+};
+
 export const UnsubscribeCopy = {
-  title: "Alerts stopped.",
+  title: "You’re unsubscribed.",
   body: (plate?: string, state?: string) =>
     plate && state
-      ? `You won’t receive more updates for ${plate} (${state}). You can resubscribe anytime.`
-      : "You won’t receive more updates to this destination.",
+      ? `We’ll stop sending alerts for ${plate} (${state}).`
+      : "We’ll stop sending alerts to this destination.",
   backToSearch: "Back to search",
-  manageOther: "Manage other plates",
 };
 
-// ---------------- Errors & Validation ----------------
 export const ErrorsCopy = {
-  generic: "Something went wrong on our end. Please try again.",
+  generic: "Something went wrong. Try again or come back later.",
   network: "Can’t reach the city right now. Try again in a moment.",
-  validationPlate: "Plates must be letters and numbers only.",
-  validationState: "Enter a valid 2–3 letter state code (e.g., CA).",
-  rateLimit: "Too many requests. Please wait a minute and try again.",
+  validationPlate: "Plate should be letters and numbers only.",
+  validationState: "Use a 2–3 letter state code (e.g., CA).",
+  rateLimit: "Too many requests. Please try again in a minute.",
 };
 
-// ---------------- Footer ----------------
 export const FooterCopy = {
-  powered: "TicketPay — Trusted ticket alerts.",
+  powered: "Powered by TicketPay",
   privacy: "Privacy",
   terms: "Terms",
   accessibility: "Accessibility",
 };
 
-// ---------------- Example Alert (Preview + onboarding) ----------------
 export const ExampleAlertCopy = {
   cardTitle: "Example alert",
   sms: (plate: string, state: string) =>
-    `TicketPay: New ticket for ${plate} (${state}): $65 · No Parking · Mission & 16th. Pay: link.example. Reply STOP to unsubscribe.`,
-  emailSubject: (plate: string, state: string) => `TicketPay alerts active for ${plate} (${state}).`,
+    `TicketPay: New ticket for ${plate} (${state}): $65 · No Parking 7–9a at Mission & 16th. Pay: example.link. Reply STOP to unsubscribe.`,
+  emailSubject: (plate: string, state: string) =>
+    `TicketPay: you’re set for alerts on ${plate} (${state})`,
   emailBody: (plate: string, state: string) =>
-    `You’ll get an update the moment a new ticket is posted. Unsubscribe anytime with one click.`,
-};
-
-// ---------------- Policies (short, friendly headers) ----------------
-export const PoliciesCopy = {
-  privacyTitle: "Privacy Policy",
-  privacyBody: [
-    "We value your trust.",
-    "We collect your plate only when you subscribe to alerts.",
-    "We do not sell your data.",
-    "You can unsubscribe at any time via the link in each message.",
-    "We use trusted providers (e.g., email/SMS) to deliver alerts.",
-  ],
-  termsTitle: "Terms of Service",
-  termsBody: [
-    "Simple and transparent.",
-    "TicketPay links to official city payment sites and does not process payments.",
-    "Data availability depends on city systems. We cannot guarantee uptime.",
-    "Use at your own discretion; always confirm details on the official city site.",
-  ],
-  accessibilityTitle: "Accessibility",
-  accessibilityBody: [
-    "We aim to meet WCAG 2.1 AA.",
-    "If you find an issue, please contact support@ticketpay.us.com.",
-  ],
+    `You’ll get an email whenever a new ticket is posted for ${plate} (${state}). You can unsubscribe at any time.`,
 };

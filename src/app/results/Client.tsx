@@ -40,7 +40,7 @@ export default function ResultsClient() {
           San Francisco · CA
         </div>
 
-        <h1 className="mt-2 text-2xl font-semibold">Check your plate & get alerts</h1>
+  <h1 className="mt-2 text-2xl font-semibold tp-fade">Check your plate & get alerts</h1>
         <p className="mt-2 text-sm text-gray-600">
           Results for <span className="font-mono">{plate || "—"}</span>{state ? ` (${state})` : ""}.
           If a new ticket posts in San Francisco, we’ll notify you instantly.
@@ -145,7 +145,7 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
   }
 
   return (
-    <div className="mt-6 rounded-2xl border border-gray-200 p-5">
+    <div className="mt-6 rounded-2xl border border-black/10 bg-white p-5 shadow-card tp-fade">
       <h3 className="text-base font-semibold">Get alerts for {plate || 'your plate'} ({state})</h3>
       <p className="mt-1 text-sm text-gray-600">San Francisco · CA</p>
 
@@ -167,19 +167,17 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
           <label className="sr-only" htmlFor="contact">Contact</label>
           <input
             id="contact"
-            className="w-full rounded-xl border border-gray-300 px-4 h-12 text-[16px] focus:outline-none focus:ring-2 focus:ring-[#667eea]"
+            className="tp-input"
             placeholder={channel==='email' ? 'you@example.com' : '(415) 555-0123'}
             value={value}
             onChange={(e)=>setValue(e.target.value)}
             inputMode={channel==='email' ? 'email' : 'tel'}
             required
           />
-          <p className="mt-1 text-xs text-gray-500">Private. Secure. Unsubscribe anytime.</p>
-          {channel==='sms' && (
-            <p className="mt-1 text-xs text-gray-500">
-              By providing your number you agree to receive SMS reminders. Msg &amp; data rates may apply. Reply STOP to opt out. Text HELP for help.
-            </p>
-          )}
+          <p className="mt-1 tp-micro">
+            By subscribing, you agree to receive alerts for this plate. Msg & data rates may apply. Reply STOP to cancel, HELP for help. See our{" "}
+            <a href="/consent" className="underline">Consent policy</a>.
+          </p>
         </div>
 
         {err && <p className="text-sm text-red-600">{err}</p>}

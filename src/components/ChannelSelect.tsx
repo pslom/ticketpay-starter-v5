@@ -9,7 +9,7 @@ export default function ChannelSelect({ onNext }: { onNext: (m: Mode) => void })
 
   return (
     <div className="space-y-4">
-  <h3 className="text-lg font-semibold">{ResultsCopy.channelLabel}</h3>
+  <h3 className="text-lg font-semibold">{ResultsCopy.subscribeLead}</h3>
       <div className="flex gap-3">
         {(["email", "sms", "both"] as Mode[]).map((opt) => (
           <button

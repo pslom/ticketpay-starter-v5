@@ -109,15 +109,14 @@ export async function POST(req: NextRequest) {
       }
 
       try {
-        const mod = await import('../../../lib/notify');
+  const mod = await import('../../../lib/notifier');
         const notifier = (mod && typeof mod.createNotifier === 'function') ? mod.createNotifier() : null;
         const manage = `${BASE_URL}/manage`;
         const unsub  = `${BASE_URL}/unsubscribe/${id}`;
         const text = `TicketPay: subscribed to ${plateNorm}/${stateNorm} (${city}). Manage: ${manage} — Unsubscribe: ${unsub}`;
-  const HAS_EMAIL_FROM = !!(process.env.SENDGRID_FROM || process.env.EMAIL_FROM_ADDRESS);
-  if ((process.env.SENDGRID_API_KEY && HAS_EMAIL_FROM) && channel === 'email' && notifier) {
+  if ((process.env.SENDGRID_API_KEY || process.env.RESEND_API_KEY) && channel === 'email' && notifier) {
           notifier.notify({ channel:'email', to: value, subject:'TicketPay subscription', text,
-                   html: `<p>${text}</p><p><a href="${unsub}">Unsubscribe</a></p>` }).catch(()=>{});
+                   html: `<p>${text}</p><p><a href="${unsub}">Unsubscribe</a></p>`, listUnsubUrl: unsub }).catch(()=>{});
         }
         if ((process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_FROM) && channel === 'sms' && notifier) {
           notifier.notify({ channel:'sms', to: value, text }).catch(()=>{});

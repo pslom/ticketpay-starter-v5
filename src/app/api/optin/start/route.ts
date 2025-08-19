@@ -1,19 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { makeToken, PendingPayload } from "@/lib/optin";
+import { createNotifier } from "@/lib/notifier";
 
 const BASE_URL = process.env.BASE_URL || "https://ticketpay.us.com";
-const FROM_EMAIL = process.env.FROM_EMAIL || "no-reply@ticketpay.us.com";
 
-// Optional email send via Resend
-async function sendEmail(to: string, subject: string, html: string) {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) return;
-  await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
-    body: JSON.stringify({ from: FROM_EMAIL, to, subject, html }),
-  }).catch(() => {});
-}
+const notifier = createNotifier();
 
 // Optional SMS via Twilio
 async function sendSMS(to: string, body: string) {
@@ -44,15 +35,16 @@ export async function POST(req: NextRequest) {
     const token = makeToken({ plate, state, city, channel, value });
     const confirmUrl = `${BASE_URL}/optin/confirm?token=${encodeURIComponent(token)}`;
 
-    if (channel === "email") {
+  if (channel === "email") {
       const html = `
         <div style="font-family:system-ui,Segoe UI,Arial">
           <h2>Confirm TicketPay alerts</h2>
           <p>Confirm alerts for plate <b>${plate}</b> (${state}) in San Francisco.</p>
           <p><a href="${confirmUrl}" style="display:inline-block;padding:10px 14px;background:#000;color:#fff;border-radius:10px;text-decoration:none">Confirm alerts</a></p>
-          <p style="font-size:12px;color:#666">If you didn’t request this, ignore this email.</p>
+      <p style="font-size:12px;color:#666">If you didn’t request this, ignore this email.</p>
+      <p style="font-size:12px;color:#666;margin-top:16px">Questions? Reply to this email and we’ll help: ${process.env.MAIL_REPLY_TO || process.env.MAIL_FROM_EMAIL || "info@ticketpay.us.com"}</p>
         </div>`;
-      await sendEmail(value, "Confirm TicketPay alerts", html);
+    await notifier.notify({ channel: "email", to: value, subject: "Confirm TicketPay alerts", text: "Confirm TicketPay alerts", html, listUnsubUrl: `${BASE_URL}/unsubscribe` }).catch(()=>{});
     } else {
       const body = `TicketPay: Confirm alerts for ${plate} (${state}) in SF:\n${confirmUrl}\nReply STOP to opt out.`;
       await sendSMS(value, body);

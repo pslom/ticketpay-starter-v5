@@ -2,7 +2,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import { sendSubscribeConfirmEmail } from "@/lib/email";
+import { createNotifier } from "@/lib/notifier";
 import { subscribeSchema } from "@/lib/validation";
 import { z } from "zod";
 
@@ -50,13 +50,24 @@ export async function POST(req: Request) {
       });
     }
 
-    // TODO: persist to DB (unique on plate/state/channel/value)
-    console.info("subscribe", { plate: upperPlate, state: upperState, channel: upperChannel, value: upperValue });
+  // TODO: persist to DB (unique on plate/state/channel/value)
+  console.info("subscribe", { plate: upperPlate, state: upperState, channel: upperChannel, value: upperValue });
 
-    // Send confirmation email only when available
+    // Send confirmation email only when available via unified notifier
     if (upperChannel === "email") {
       try {
-        await sendSubscribeConfirmEmail(upperValue, upperPlate, upperState);
+        const confirmUrl = `${process.env.BASE_URL || "https://ticketpay.us.com"}/optin/confirm?plate=${encodeURIComponent(upperPlate)}&state=${encodeURIComponent(upperState)}&value=${encodeURIComponent(upperValue)}`;
+        const notifier = createNotifier();
+        const subject = "Confirm TicketPay alerts";
+        const text = `Confirm alerts for plate ${upperPlate} (${upperState}).\n${confirmUrl}`;
+        const html = `
+          <div style="font-family:system-ui,Segoe UI,Arial">
+            <h2>Confirm TicketPay alerts</h2>
+            <p>Confirm alerts for plate <b>${upperPlate}</b> (${upperState}).</p>
+            <p><a href="${confirmUrl}" style="display:inline-block;padding:10px 14px;background:#000;color:#fff;border-radius:10px;text-decoration:none">Confirm alerts</a></p>
+            <p style="font-size:12px;color:#666;margin-top:16px">Questions? Reply to this email and we’ll help: ${process.env.MAIL_REPLY_TO || process.env.MAIL_FROM_EMAIL || "info@ticketpay.us.com"}</p>
+          </div>`;
+        await notifier.notify({ channel: "email", to: upperValue, subject, text, html });
       } catch (e) {
         console.error("email.send.failed", e);
         // Still return ok; email isn’t critical to subscription

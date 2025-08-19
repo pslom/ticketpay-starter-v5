@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getPool } from "@/lib/pg";
-import { sendSms, sendEmail } from "@/lib/notify";
+import { createNotifier } from "@/lib/notifier";
 
 function j(s:number,b: unknown){return new NextResponse(JSON.stringify(b),{status:s,headers:{'content-type':'application/json'}});}
 
@@ -16,6 +16,7 @@ function readAuth(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  const notifier = createNotifier();
   const { bearer, xAdmin } = readAuth(req);
   const CRON = process.env.CRON_SECRET || '';
   const ADMIN = process.env.ADMIN_TOKEN || '';
@@ -43,14 +44,14 @@ export async function GET(req: NextRequest) {
       try {
         const plate = payload?.plate || undefined;
         if ((channel === 'sms' || channel === 'both') && payload?.phone) {
-          await sendSms(payload.phone, type === 'posted' ? `⏰ Ticket posted${plate ? ` for ${plate}` : ''}. We’ll keep you updated.` : `⏰ Late fee in 2 days${plate ? ` for ${plate}` : ''}. Pay on time to avoid fees.`);
+          await notifier.notify({ channel:'sms', to: payload.phone, text: type === 'posted' ? `⏰ Ticket posted${plate ? ` for ${plate}` : ''}. We’ll keep you updated.` : `⏰ Late fee in 2 days${plate ? ` for ${plate}` : ''}. Pay on time to avoid fees.` });
         }
         if ((channel === 'email' || channel === 'both') && payload?.email) {
           const title = type === 'posted' ? 'Ticket posted' : 'Late fee in 2 days';
           const p = plate ? ` for ${plate}` : '';
           const html = `<p><strong>${title}${p}</strong></p><p>Manage alerts: <a href=\"/manage\">/manage</a></p>`;
           const text = `${title}${p}\nManage: /manage`;
-          await sendEmail(payload.email, `TicketPay: ${title}`, text, html);
+          await notifier.notify({ channel:'email', to: payload.email, subject: `TicketPay: ${title}`, text, html, listUnsubUrl: process.env.BASE_URL ? `${process.env.BASE_URL}/unsubscribe/${payload?.subscriptionId || ''}` : undefined });
         }
 
         await pool.query(`update public.subscription_alerts set sent_at = now() where id = $1`, [id]);

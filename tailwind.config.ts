@@ -18,13 +18,20 @@ export default {
         grayA: '#F5F5F5',
         grayB: '#E5E7EB',
         grayC: '#9CA3AF',
+        tp: {
+          green: '#0F5A37',      // primary
+          greenDark: '#0B472C',  // gradient end
+          greenHue: '#106240',   // hover hue
+          off: '#F7F5F2',        // warm card background
+        },
       },
       borderRadius: {
         xl: '16px',
-        '2xl': '20px',
+        '2xl': '1rem',
+        xl2: '1.25rem',
       },
       boxShadow: {
-        card: '0 6px 20px rgba(0,0,0,0.06)',
+        card: '0 8px 24px rgba(16, 30, 25, 0.12)',
       },
       transitionDuration: {
         fast: '150ms',
