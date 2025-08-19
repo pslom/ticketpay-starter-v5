@@ -1,9 +1,9 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { UnsubscribeCopy } from "@/lib/copy";
 
-export default function UnsubscribePage() {
+export default function UnsubscribeSuccess() {
   const { id } = useParams<{ id: string }>();
   const [status, setStatus] = useState<"loading" | "ok" | "error">("loading");
 
@@ -25,24 +25,29 @@ export default function UnsubscribePage() {
   }, [id]);
 
   return (
-    <main className="mx-auto max-w-md px-4 py-10 space-y-4">
-      {status === "loading" && <p>Unsubscribing…</p>}
-      {status === "ok" && (
-        <>
-          <h1 className="text-2xl font-semibold">You’re unsubscribed</h1>
-          <p className="text-neutral-600 text-sm">
-            You’ll no longer receive ticket alerts for this subscription.
-          </p>
-        </>
-      )}
-      {status === "error" && (
-        <>
-          <h1 className="text-2xl font-semibold">We couldn’t unsubscribe you</h1>
-          <p className="text-neutral-600 text-sm">
-            The link may be invalid or expired. Please try again later.
-          </p>
-        </>
-      )}
+    <main className="mx-auto max-w-md px-4 py-16">
+      <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-card text-center">
+        {status === "loading" && (
+          <>
+            <h1 className="text-2xl font-semibold">Unsubscribing…</h1>
+            <p className="mt-2 text-neutral-700">Please wait a moment.</p>
+          </>
+        )}
+        {status === "ok" && (
+          <>
+            <h1 className="text-2xl font-semibold">{UnsubscribeCopy.title}</h1>
+            <p className="mt-2 text-neutral-700">{UnsubscribeCopy.body()}</p>
+            <a href="/" className="tp-btn mt-6 w-full">{UnsubscribeCopy.backToSearch}</a>
+          </>
+        )}
+        {status === "error" && (
+          <>
+            <h1 className="text-2xl font-semibold">We couldn’t unsubscribe you</h1>
+            <p className="mt-2 text-neutral-700">The link may be invalid or expired. Please try again later.</p>
+            <a href="/" className="tp-btn mt-6 w-full">Back to search</a>
+          </>
+        )}
+      </div>
     </main>
   );
 }

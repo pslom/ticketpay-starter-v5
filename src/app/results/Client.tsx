@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -8,6 +8,8 @@ import { useSearchParams } from "next/navigation";
 import { triggerConfetti } from "@/components/confetti";
 import { useRouter } from "next/navigation";
 import { track } from "@/lib/track";
+import TogglePills from "@/components/TogglePills";
+import { ResultsCopy } from "@/lib/copy";
 
 export default function ResultsClient() {
   const sp = useSearchParams();
@@ -33,40 +35,33 @@ export default function ResultsClient() {
   }, []);
 
   return (
-    <main className="min-h-dvh bg-gray-50 text-black">
-
-      <section className="mx-auto max-w-2xl px-4 py-10">
-        <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-gray-50 px-3 py-1 text-xs text-gray-700">
-          San Francisco · CA
+    <main className="bg-white">
+      <section className="mx-auto max-w-2xl px-4 py-8">
+        {/* Header */}
+        <div className="tp-fade">
+          <h1 className="text-3xl font-bold text-neutral-900">{ResultsCopy.title}</h1>
+          <p className="mt-2 text-neutral-700">{ResultsCopy.lead(plate || "—", state || "CA")}</p>
         </div>
 
-  <h1 className="mt-2 text-2xl font-semibold tp-fade">Check your plate & get alerts</h1>
-        <p className="mt-2 text-sm text-gray-600">
-          Results for <span className="font-mono">{plate || "—"}</span>{state ? ` (${state})` : ""}.
-          If a new ticket posts in San Francisco, we’ll notify you instantly.
-        </p>
-
-        <div className="mt-6 rounded-2xl border border-dashed border-gray-200 p-5 text-sm text-gray-600">
-          <ul className="space-y-1">
-            <li>• We’ll show open tickets here (if any are found).</li>
-            <li>• Subscribe to get real-time alerts for new tickets in SF.</li>
-            <li>• Private. Secure. One-tap unsubscribe anytime.</li>
-          </ul>
-        </div>
-
+        {/* Subscribe card */}
         <SubscribeBox plate={plate} state={state} />
 
-        <div className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <Card title="Instant alerts" desc="Email or SMS the moment a ticket posts." />
-          <Card title="Clear status" desc="Know what’s open so you can act early." />
-          <Card title="Easy opt-out" desc="Every alert includes a direct unsubscribe link." />
+        {/* Benefits */}
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="tp-card p-4">
+            <h3 className="font-medium">Instant alerts</h3>
+            <p className="tp-micro mt-1">Email or SMS the moment a ticket posts.</p>
+          </div>
+          <div className="tp-card p-4">
+            <h3 className="font-medium">Clear status</h3>
+            <p className="tp-micro mt-1">Know what’s open so you can act early.</p>
+          </div>
+          <div className="tp-card p-4">
+            <h3 className="font-medium">Easy opt-out</h3>
+            <p className="tp-micro mt-1">Every alert includes a direct unsubscribe link.</p>
+          </div>
         </div>
       </section>
-
-      <footer className="mx-auto max-w-2xl px-4 pb-10 text-[11px] text-gray-500">
-        © TicketPay • San Francisco, CA
-      </footer>
-      <span className="sr-only opacity-100 translate-y-0"></span>
     </main>
   );
 }
@@ -76,14 +71,7 @@ function maskPlate(p: string) {
   return p.replace(/.(?=.{2})/g, "•");
 }
 
-function Card({ title, desc }: { title: string; desc: string }) {
-  return (
-    <div data-reveal className="opacity-0 translate-y-1 transition-all duration-500 rounded-xl border border-black/10 bg-white p-4 shadow-sm">
-      <div className="text-sm font-medium">{title}</div>
-      <p className="mt-1 text-xs text-gray-600">{desc}</p>
-    </div>
-  );
-}
+// Removed old Card; using tp-card benefits above
 
 function SubscribeBox({ plate, state }: { plate: string; state: string }) {
   const [channel, setChannel] = React.useState<'email'|'sms'>('email');
@@ -145,52 +133,42 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
   }
 
   return (
-    <div className="mt-6 rounded-2xl border border-black/10 bg-white p-5 shadow-card tp-fade">
-      <h3 className="text-base font-semibold">Get alerts for {plate || 'your plate'} ({state})</h3>
-      <p className="mt-1 text-sm text-gray-600">San Francisco · CA</p>
-
-      <form onSubmit={onSubmit} className="mt-4 space-y-3">
+    <div className="mt-6 rounded-2xl border border-black/10 bg-white p-5 shadow-card tp-fade" style={{animationDelay:"60ms"}}>
+      <p className="text-sm text-neutral-800 mb-3">{ResultsCopy.subscribeLead}</p>
+      <form onSubmit={onSubmit} className="space-y-3">
         <input className="hidden" name="company" autoComplete="off" tabIndex={-1} value={honey} onChange={(e)=>setHoney(e.target.value)} />
+        <TogglePills
+          value={channel}
+          onChange={(v) => setChannel(v as any)}
+          options={[
+            { label: ResultsCopy.channelEmail, value: "email" },
+            { label: ResultsCopy.channelSms, value: "sms" },
+          ]}
+        />
 
-        <div className="flex gap-6">
-          <label className="inline-flex items-center gap-2">
-            <input type="radio" name="channel" value="email" checked={channel==='email'} onChange={()=>setChannel('email')} />
-            <span>Email</span>
-          </label>
-          <label className="inline-flex items-center gap-2">
-            <input type="radio" name="channel" value="sms" checked={channel==='sms'} onChange={()=>setChannel('sms')} />
-            <span>SMS</span>
-          </label>
-        </div>
-
-        <div>
-          <label className="sr-only" htmlFor="contact">Contact</label>
+        <div className="mt-3">
           <input
-            id="contact"
             className="tp-input"
-            placeholder={channel==='email' ? 'you@example.com' : '(415) 555-0123'}
+            placeholder={channel === "email" ? ResultsCopy.inputEmailPlaceholder : ResultsCopy.inputPhonePlaceholder}
+            inputMode={channel === "email" ? "email" : "tel"}
             value={value}
-            onChange={(e)=>setValue(e.target.value)}
-            inputMode={channel==='email' ? 'email' : 'tel'}
+            onChange={(e) => setValue(e.target.value)}
             required
           />
-          <p className="mt-1 tp-micro">
-            By subscribing, you agree to receive alerts for this plate. Msg & data rates may apply. Reply STOP to cancel, HELP for help. See our{" "}
-            <a href="/consent" className="underline">Consent policy</a>.
-          </p>
         </div>
 
         {err && <p className="text-sm text-red-600">{err}</p>}
         {subMsg && <p className="text-sm text-green-600">{subMsg}</p>}
 
-        <button
-          type="submit"
-          disabled={loading || !value}
-          className="inline-flex items-center justify-center rounded-2xl bg-black px-4 py-2 text-white font-medium transition transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60"
-        >
-          {loading ? 'Saving…' : 'Get alerts'}
+        <button type="submit" disabled={loading || !value} className="tp-btn mt-1">
+          {ResultsCopy.ctaSubscribe}
         </button>
       </form>
+
+      <p className="tp-micro mt-3">
+        By subscribing, you agree to receive alerts for this plate. Msg &amp; data rates may apply.
+        Reply STOP to cancel, HELP for help. See our <a href="/consent" className="underline">Consent policy</a>.
+      </p>
     </div>
   );
 }

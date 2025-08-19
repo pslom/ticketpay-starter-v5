@@ -1,20 +1,9 @@
-import React from "react";
-
-type Props = {
-  className?: string;
-  size?: "sm" | "md" | "lg";
-};
-
-export default function Wordmark({ className = "" }: { className?: string }) {
+import LogoMark from "./Logo";
+export default function Wordmark({ className = "" }) {
   return (
-    <span
-      className={`bg-clip-text text-transparent font-semibold tracking-tight ${className}`}
-      style={{
-        backgroundImage: "linear-gradient(90deg,#111827,#4f46e5,#7c3aed)",
-      }}
-    >
-      <span style={{ letterSpacing: "-0.02em" }}>Ticket</span>
-      <span style={{ letterSpacing: "-0.03em" }}>Pay</span>
-    </span>
+    <div className={["flex items-center gap-2", className].join(" ")}>
+      <LogoMark className="h-7 w-7" />
+      <span className="text-[22px] font-semibold tracking-tight">TicketPay</span>
+    </div>
   );
 }

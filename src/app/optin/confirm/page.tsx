@@ -47,54 +47,32 @@ export default async function ConfirmPage({
   }
 
   return (
-    <main className="mx-auto max-w-2xl p-6 space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-bold">{ConfirmCopy.title}</h1>
-        <p className="text-gray-600">{ConfirmCopy.subtitle}</p>
-      </header>
+    <main className="mx-auto max-w-2xl px-4 py-10">
+      <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-card tp-fade">
+        <h1 className="text-2xl font-semibold">{ConfirmCopy.title}</h1>
+        <p className="mt-2 text-neutral-700">{ConfirmCopy.subtitle}</p>
 
-      {dueAt && (
-        <DueDateCard
-          dueAt={dueAt}
-          lateFeeAt={lateFeeAt}
-          issuedAt={issuedAt}
-          estimated={estimated}
-        />
-      )}
+        {dueAt && (
+          <div className="mt-4">
+            <DueDateCard
+              dueAt={dueAt}
+              lateFeeAt={lateFeeAt}
+              issuedAt={issuedAt}
+              estimated={estimated}
+            />
+          </div>
+        )}
 
-      {/* This client component handles the actual confirm UX */}
-      <ConfirmClient email={email} phone={phone} visible={visible} />
-
-      {/* Success CTAs (safe to always show; harmless if user re-visits) */}
-      <section className="rounded-2xl border border-gray-200 bg-white p-5">
-        <h2 className="text-lg font-semibold">What’s next?</h2>
-        <p className="mt-1 text-sm text-gray-600">
-          You’re set. By default we’ll send two reminders: when your ticket is posted, and 2 days before any late fee.
-          You can manage or remove alerts anytime on the <a className="underline" href="/manage">Manage</a> page.
-        </p>
-
-        <div className="mt-4 flex flex-col sm:flex-row gap-3">
-          <Link
-            href="/"
-            className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white text-center"
-          >
-            Add another plate
-          </Link>
-          <Link
-            href="/manage"
-            className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-center"
-          >
-            Manage alerts
-          </Link>
+        {/* Client-side confirm/preview logic retained */}
+        <div className="mt-4">
+          <ConfirmClient email={email} phone={phone} visible={visible} />
         </div>
 
-        <p className="mt-3 text-xs text-gray-500">
-          You can unsubscribe anytime. See{" "}
-          <a href="/privacy" className="underline">Privacy</a> and{" "}
-          <a href="/terms" className="underline">Terms</a>. For help, email{" "}
-          <a href="mailto:support@ticketpay.us.com" className="underline">support@ticketpay.us.com</a>.
-        </p>
-      </section>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <a href="/" className="tp-btn"> {ConfirmCopy.addAnother} </a>
+          <a href="/" className="rounded-xl border px-4 py-3 text-sm"> {ConfirmCopy.share} </a>
+        </div>
+      </div>
     </main>
   );
 }
