@@ -10,12 +10,13 @@ export async function sendEmail(
   html?: string
 ) {
   const key = process.env.SENDGRID_API_KEY;
-  const from = process.env.SENDGRID_FROM || process.env.EMAIL_FROM_ADDRESS; // fallback supported
+  // Prefer configured FROM; fall back to branded default which matches our authenticated domain
+  const from = process.env.SENDGRID_FROM || process.env.EMAIL_FROM_ADDRESS || "info@ticketpay.us.com";
   if (!key || !from) {
     return { ok: false, skipped: true as const, reason: 'sendgrid_env_missing' };
   }
 
-  const fromName = process.env.EMAIL_FROM_NAME || process.env.SENDGRID_FROM_NAME;
+  const fromName = process.env.EMAIL_FROM_NAME || process.env.SENDGRID_FROM_NAME || 'TicketPay';
   const body = {
     personalizations: [{ to: [{ email: to }] }],
     from: fromName ? { email: from, name: fromName } : { email: from },
