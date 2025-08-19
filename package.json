@@ -9,11 +9,11 @@
     "lint": "next lint",
     "db:push": "node ./scripts/db-init.js",
     "clean": "rm -rf .next",
-  "typecheck": "npm run clean && next build --no-lint && tsc --noEmit -p tsconfig.json",
-  "smoke:local": "bash ./scripts/smoke-test.sh",
-  "smoke:remote": "bash ./scripts/smoke.sh",
-  "pg:smoke": "node ./scripts/pg-smoke.js",
-  "alerts:enqueue:test": "node ./scripts/alerts-enqueue-test.js"
+    "typecheck": "npm run clean && next build --no-lint && tsc --noEmit -p tsconfig.json",
+    "smoke:local": "bash ./scripts/smoke-test.sh",
+    "smoke:remote": "bash ./scripts/smoke.sh",
+    "pg:smoke": "node ./scripts/pg-smoke.js",
+    "alerts:enqueue:test": "node ./scripts/alerts-enqueue-test.js"
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.5",
