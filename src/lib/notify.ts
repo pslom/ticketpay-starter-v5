@@ -15,9 +15,10 @@ export async function sendEmail(
     return { ok: false, skipped: true as const, reason: 'sendgrid_env_missing' };
   }
 
+  const fromName = process.env.EMAIL_FROM_NAME || process.env.SENDGRID_FROM_NAME;
   const body = {
     personalizations: [{ to: [{ email: to }] }],
-    from: { email: from },
+    from: fromName ? { email: from, name: fromName } : { email: from },
     subject,
     content: [
       { type: 'text/plain', value: text },
