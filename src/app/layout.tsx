@@ -19,9 +19,19 @@ export const metadata: Metadata = {
   themeColor: "#ffffff",
 };
 
+import Head from "next/head";
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <Head>
+        <title>TicketPay - Never miss a ticket deadline</title>
+        <meta property="og:title" content="TicketPay - Never miss a ticket deadline" />
+        <meta property="og:description" content="Instant SF ticket alerts by text or email. We'll keep watch so you don't have to." />
+        <meta property="og:image" content="https://www.ticketpay.us.com/og-image.png" />
+        <meta property="og:url" content="https://www.ticketpay.us.com" />
+        <meta property="twitter:card" content="summary_large_image" />
+      </Head>
       <body className="antialiased text-[16px] text-black">
         <header className="sticky top-0 z-10 bg-white/70 backdrop-blur border-b border-black/5">
           <div className="mx-auto max-w-4xl px-4 h-14 flex items-center justify-between">
