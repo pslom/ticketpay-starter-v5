@@ -135,14 +135,43 @@ a{color:inherit}
 }
 
 /* TicketPay utilities */
-@layer utilities {
-  .tp-card { @apply bg-tp-off shadow-card rounded-2xl; }
-  .tp-btn { @apply inline-flex items-center justify-center rounded-xl px-4 py-3 font-medium text-white bg-tp-green transition-colors; }
-  .tp-btn:hover { @apply bg-tp-green-hue; }
-  .tp-input { @apply w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-[16px] outline-none focus:ring-2 focus:ring-emerald-300; }
-  .tp-label { @apply text-[15px] font-medium text-neutral-800 mb-1; }
-  .tp-micro { @apply text-[13px] text-neutral-600; }
+.tp-card {
+  background-color: var(--color-tp-off);
+  box-shadow: 0 12px 28px rgba(16,30,25,.14);
+  border-radius: var(--radius-2xl);
 }
+.tp-btn  {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem; /* rounded-xl */
+  padding: 0.75rem 1rem;  /* px-4 py-3 */
+  font-weight: 500;       /* font-medium */
+  color: #ffffff;         /* text-white */
+  background-color: var(--color-tp-green);
+  transition: background-color .15s ease, transform .15s ease;
+}
+.tp-btn:hover { background-color: var(--color-tp-green-hue); transform: translateY(-0.5px);} 
+.tp-input{
+  width: 100%;
+  border-radius: 0.75rem;                 /* rounded-xl */
+  border: 1px solid #D4D4D8;              /* neutral-300 */
+  background: #ffffff;
+  padding: 0.75rem 1rem;                  /* px-4 py-3 */
+  font-size: 16px;
+  outline: none;
+}
+.tp-input:focus { box-shadow: 0 0 0 2px rgba(110,231,183,.6); } /* ring-emerald-300 */
+.tp-label{ font-size: 15px; font-weight: 500; color: #262626; margin-bottom: 0.25rem; }
+.tp-micro{ font-size: 13px; color: #525252; }
+.tp-chip { display:inline-flex; align-items:center; gap:.25rem; border-radius:9999px; border:1px solid rgba(0,0,0,.1); background:#fff; padding: .25rem .625rem; font-size:12px; }
 
-@keyframes tpFadeUp { from { opacity: 0; transform: translateY(6px) } to { opacity:1; transform: none } }
+@keyframes tpFadeUp { from {opacity:0; transform: translateY(6px)} to {opacity:1; transform:none} }
 .tp-fade { animation: tpFadeUp .4s ease-out both; }
+
+/* Hero helpers */
+.tp-hero {
+  background-image:
+    radial-gradient(1100px 520px at 80% 92%, rgba(255,255,255,.16), transparent),
+    linear-gradient(135deg, #0F5A37 0%, #0B472C 100%);
+}

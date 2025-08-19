@@ -7,9 +7,10 @@ import { useSearchParams } from "next/navigation";
 // import { Wordmark } from "@/components/Wordmark"; // unused
 import { triggerConfetti } from "@/components/confetti";
 import { useRouter } from "next/navigation";
-import { track } from "@/lib/track";
+import { track, EVENTS } from "@/lib/track";
 import TogglePills from "@/components/TogglePills";
 import { ResultsCopy } from "@/lib/copy";
+import Stepper from "@/components/Stepper";
 
 export default function ResultsClient() {
   const sp = useSearchParams();
@@ -46,7 +47,7 @@ export default function ResultsClient() {
         {/* Subscribe card */}
         <SubscribeBox plate={plate} state={state} />
 
-        {/* Benefits */}
+  {/* Benefits */}
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="tp-card p-4">
             <h3 className="font-medium">Instant alerts</h3>
@@ -61,6 +62,9 @@ export default function ResultsClient() {
             <p className="tp-micro mt-1">Every alert includes a direct unsubscribe link.</p>
           </div>
         </div>
+
+  {/* Stepper */}
+  <Stepper step={2} />
       </section>
     </main>
   );
@@ -102,6 +106,7 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
       payload.value = `+1${digits}`;
     }
 
+    track(EVENTS.SUBSCRIBE_ATTEMPT, { channel });
     setLoading(true);
     try {
       const r = await fetch('/api/optin/start', {
@@ -114,8 +119,10 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
       setOk(true);
       setSubMsg("Subscribed. You’ll get alerts.");
       triggerConfetti();
+      track(EVENTS.SUBSCRIBE_SUCCESS, { channel });
     } catch (e: any) {
       setErr(e?.message || 'Something went wrong.');
+      track(EVENTS.SUBSCRIBE_ERROR, { channel });
     } finally {
       setLoading(false);
     }
@@ -139,7 +146,7 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
         <input className="hidden" name="company" autoComplete="off" tabIndex={-1} value={honey} onChange={(e)=>setHoney(e.target.value)} />
         <TogglePills
           value={channel}
-          onChange={(v) => setChannel(v as any)}
+          onChange={(v) => { setChannel(v as any); try { track(EVENTS.SELECT_CHANNEL, { channel: v }); } catch {} }}
           options={[
             { label: ResultsCopy.channelEmail, value: "email" },
             { label: ResultsCopy.channelSms, value: "sms" },

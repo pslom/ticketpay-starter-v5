@@ -31,7 +31,7 @@ export default {
         xl2: '1.25rem',
       },
       boxShadow: {
-        card: '0 8px 24px rgba(16, 30, 25, 0.12)',
+  card: '0 12px 28px rgba(16,30,25,.14)',
       },
       transitionDuration: {
         fast: '150ms',

@@ -2,11 +2,11 @@
 
 import { useEffect } from "react";
 import PreviewBlock from "@/components/PreviewBlock";
-import { track } from "@/lib/track";
+import { EVENTS, track } from "@/lib/track";
 
 export default function ConfirmClient(props: { email: string; phone: string; visible: boolean }) {
   useEffect(() => {
-    try { track("subscription_confirm_view"); } catch {}
+    try { track(EVENTS.VIEW_RESULTS); } catch {}
   }, []);
   return (
     <section aria-labelledby="preview-heading">

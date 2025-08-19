@@ -18,7 +18,7 @@ export default function ConsentPage() {
       </div>
 
       <footer className="mt-8 text-sm text-neutral-600">
-        © TicketPay • San Francisco, CA • <a href="/legal/optin-proof" className="underline">{ConsentCopy.proofLinkLabel}</a>
+        © TicketPay • San Francisco, CA
       </footer>
     </main>
   );
