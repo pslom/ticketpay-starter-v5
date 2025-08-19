@@ -114,7 +114,8 @@ export async function POST(req: NextRequest) {
         const manage = `${BASE_URL}/manage`;
         const unsub  = `${BASE_URL}/unsubscribe/${id}`;
         const text = `TicketPay: subscribed to ${plateNorm}/${stateNorm} (${city}). Manage: ${manage} — Unsubscribe: ${unsub}`;
-        if ((process.env.SENDGRID_API_KEY && process.env.SENDGRID_FROM) && channel === 'email' && notifier) {
+  const HAS_EMAIL_FROM = !!(process.env.SENDGRID_FROM || process.env.EMAIL_FROM_ADDRESS);
+  if ((process.env.SENDGRID_API_KEY && HAS_EMAIL_FROM) && channel === 'email' && notifier) {
           notifier.notify({ channel:'email', to: value, subject:'TicketPay subscription', text,
                    html: `<p>${text}</p><p><a href="${unsub}">Unsubscribe</a></p>` }).catch(()=>{});
         }
