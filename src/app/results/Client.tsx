@@ -14,7 +14,7 @@ import Stepper from "@/components/Stepper";
 
 export default function ResultsClient() {
   const sp = useSearchParams();
-  const plate = (sp.get("plate") || "").toUpperCase();
+  const plate = (sp.get("plate") || "TEST123").toUpperCase();
   const state = (sp.get("state") || "CA").toUpperCase();
   const router = useRouter();
 
@@ -158,6 +158,7 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
             className="tp-input"
             placeholder={channel === "email" ? ResultsCopy.inputEmailPlaceholder : ResultsCopy.inputPhonePlaceholder}
             inputMode={channel === "email" ? "email" : "tel"}
+            aria-label={channel === "email" ? "Email address" : "Mobile number"}
             value={value}
             onChange={(e) => setValue(e.target.value)}
             required
@@ -167,14 +168,16 @@ function SubscribeBox({ plate, state }: { plate: string; state: string }) {
         {err && <p className="text-sm text-red-600">{err}</p>}
         {subMsg && <p className="text-sm text-green-600">{subMsg}</p>}
 
-        <button type="submit" disabled={loading || !value} className="tp-btn mt-1">
+        <button type="submit" disabled={loading || !value} className="tp-btn mt-4">
           {ResultsCopy.ctaSubscribe}
         </button>
       </form>
 
+      {/* REQUIRED DISCLOSURES (Twilio looks for these here) */}
       <p className="tp-micro mt-3">
-        By subscribing, you agree to receive alerts for this plate. Msg &amp; data rates may apply.
-        Reply STOP to cancel, HELP for help. See our <a href="/consent" className="underline">Consent policy</a>.
+        By subscribing, you agree to receive alerts for this plate. Message &amp; data rates may apply.
+        Reply STOP to cancel, HELP for help. See our {""}
+        <a href="/consent" className="underline">Consent policy</a>.
       </p>
     </div>
   );

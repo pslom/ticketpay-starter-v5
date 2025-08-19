@@ -27,7 +27,7 @@ export const ResultsCopy = {
   inputPhonePlaceholder: "(415) 555-0123",
   ctaSubscribe: "Subscribe",
   trust:
-    "By subscribing, you agree to receive alerts for this plate. Msg & data rates may apply. Reply STOP to cancel, HELP for help. See our Consent policy.",
+  "By subscribing, you agree to receive alerts for this plate. Message & data rates may apply. Reply STOP to cancel, HELP for help. See our Consent policy.",
   trustConsentLinkLabel: "Consent policy",
   toastSubscribed: (p: string, s: string) =>
     `You're set. We’ll alert you about new tickets for ${p} (${s}).`,
