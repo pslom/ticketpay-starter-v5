@@ -1,36 +1,58 @@
-export const dynamic = "force-static";
+'use client'
 
-export default function OptInProof() {
+import Logo from '@/components/Logo'
+import Link from 'next/link'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { Check } from 'lucide-react'
+
+export default function ResultsPage() {
+  const sp = useSearchParams()
+  const router = useRouter()
+  const plate = sp.get('plate') || 'ABC123'
+  const state = sp.get('state') || 'CA'
+  const channel = sp.get('channel') || 'sms'
+  const contact = sp.get('contact') || ''
+
   return (
-    <main className="mx-auto max-w-3xl px-4 py-12 space-y-6 text-gray-800">
-      <h1 className="text-2xl font-semibold">Proof of Consent (SMS & Email)</h1>
-      <p className="text-sm text-gray-600">
-        This public page documents how a user opts in to TicketPay alerts and includes screenshots for carrier review.
-      </p>
+    <main className="px-4 bg-glow-right min-h-screen">
+      <header className="mx-auto max-w-5xl pt-8 sm:pt-12 pb-2 flex items-center justify-between">
+        <Link href="/" aria-label="Go to home" className="inline-flex items-center gap-2 focus:outline-none">
+          <Logo />
+        </Link>
+      </header>
 
-      <h2 className="text-lg font-medium">Opt-in story</h2>
-      <ol className="list-decimal pl-5 space-y-2 text-sm">
-        <li>User enters plate/state and chooses Email or SMS.</li>
-        <li>Subscribe card includes STOP/HELP and links to the Consent policy.</li>
-        <li>We log consent metadata (timestamp, IP, user agent).</li>
-        <li>Every message includes STOP/HELP and an unsubscribe link.</li>
-      </ol>
-
-      <h2 className="text-lg font-medium mt-6">Screenshots</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <img src="/consent/optin-1.png" alt="Results: subscribe card" className="rounded-xl border" />
-        <img src="/consent/optin-2.png" alt="Confirmation panel" className="rounded-xl border" />
-        <img src="/consent/optin-3.png" alt="Consent page" className="rounded-xl border" />
-        <img src="/consent/optin-4.png" alt="Manage alerts" className="rounded-xl border" />
+      <div className="mx-auto max-w-5xl text-center">
+        <h1 className="mt-2 text-4xl/tight sm:text-5xl/tight font-extrabold">You’re all set</h1>
+        <p className="mt-3 text-lg text-gray-600">
+          We’ll {channel === 'email' ? 'email' : 'text'} you when a ticket posts for {state} {plate}, plus reminders before late fees.
+        </p>
       </div>
 
-      <h2 className="text-lg font-medium mt-6">Sample messages</h2>
-      <div className="rounded-2xl border bg-white p-4 shadow-sm text-sm">
-        <p><span className="font-medium">Initial confirmation:</span> TicketPay: You’re set for alerts on ABC123 (CA). Reply STOP to cancel, HELP for help. Msg&data rates may apply.</p>
-        <p className="mt-2"><span className="font-medium">Alert:</span> TicketPay: New ticket for ABC123 (CA): $65 · No Parking 7–9a at Mission & 16th. Pay: example.link. Reply STOP to unsubscribe.</p>
-      </div>
+      <section className="mx-auto max-w-3xl pt-8 pb-16">
+        <div className="rounded-3xl bg-white p-8 shadow-2xl border border-gray-100 text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-100 mb-4">
+            <Check className="w-8 h-8 text-emerald-600" />
+          </div>
 
-      <footer className="pt-6 text-xs text-gray-500 border-t">© TicketPay • San Francisco, CA</footer>
+          <p className="text-lg text-gray-700">
+            Alerts active to {channel === 'sms' ? 'SMS' : 'Email'}{' '}
+            {contact ? <span className="font-medium text-gray-900">{decodeURIComponent(contact)}</span> : null}
+          </p>
+
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link href="/manage" className="px-5 py-3 rounded-xl border-2 border-gray-200 text-gray-800 hover:bg-gray-50">
+              Manage alerts
+            </Link>
+            <button onClick={() => router.push('/')} className="px-5 py-3 rounded-xl bg-gray-900 text-white hover:bg-gray-800">
+              Add another plate
+            </button>
+          </div>
+
+          <div className="mt-3 text-sm text-gray-500">
+            ✅ Secure · 🏛 Official data · 1-tap unsubscribe
+          </div>
+        </div>
+      </section>
     </main>
-  );
+  )
 }

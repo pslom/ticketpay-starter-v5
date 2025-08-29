@@ -1,14 +1,12 @@
-export default function LogoMark({ className = "h-6 w-6" }) {
+import { Shield } from 'lucide-react'
+
+export default function Logo() {
   return (
-    <svg viewBox="0 0 64 64" className={className} aria-hidden="true">
-      <defs>
-        <linearGradient id="tpG" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#0F5A37"/>
-          <stop offset="1" stopColor="#0B472C"/>
-        </linearGradient>
-      </defs>
-      <path fill="url(#tpG)" d="M10 16c4 0 6-2 6-6h26c6 0 10 4 10 10v24c0 6-4 10-10 10H16c0-4-2-6-6-6V16z"/>
-      <circle cx="16" cy="28" r="5" fill="white"/>
-    </svg>
-  );
+    <div className="select-none inline-flex items-center gap-2.5" aria-label="TicketPay">
+      <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center shadow-md">
+        <Shield className="w-5 h-5 text-white" aria-hidden="true" />
+      </div>
+      <span className="font-bold text-xl text-gray-900">TicketPay</span>
+    </div>
+  )
 }

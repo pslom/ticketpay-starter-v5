@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .aurora-bg {
+    position: relative;
+    isolation: isolate;
+    background: radial-gradient(1400px 900px at 85% 85%, rgba(16,185,129,0.25), transparent 60%),
+                radial-gradient(1200px 800px at 15% 10%, rgba(168,85,247,0.20), transparent 60%),
+                radial-gradient(1000px 700px at 85% 10%, rgba(239,68,68,0.15), transparent 60%),
+                #f8fafc;
+  }
+}
+
+@layer components {
+  .card { @apply rounded-3xl bg-white/95 shadow-xl ring-1 ring-black/5; }
+  .pill { @apply inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-medium; }
+  .chip { @apply inline-flex items-center rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-xs font-medium; }
+  .input { @apply h-12 w-full rounded-xl border border-neutral-300 bg-white px-3 text-neutral-900 placeholder-neutral-400 shadow-sm focus:outline-none focus:ring-4 focus:ring-emerald-300/40 focus:border-emerald-500; }
+  .select { @apply input pr-8 bg-white; }
+  .btn-primary { @apply inline-flex h-12 items-center justify-center rounded-xl bg-emerald-600 px-5 text-white font-semibold shadow-lg hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-300/40; }
+  .btn-secondary { @apply inline-flex h-12 items-center justify-center rounded-xl bg-neutral-100 px-5 text-neutral-900 font-medium hover:bg-neutral-200 focus:outline-none focus:ring-4 focus:ring-neutral-300/50; }
+  .kicker { @apply pill bg-emerald-50 text-emerald-800; }
+  .hero-h1 { @apply font-extrabold leading-tight tracking-tight; font-size: clamp(36px, 4vw, 56px); }
+  .sub { @apply text-neutral-600; }
+  .meta { @apply text-sm text-neutral-500; }
+}

@@ -1,0 +1,51 @@
+'use client'
+
+import { useSearchParams, useRouter } from 'next/navigation'
+import { Check } from 'lucide-react'
+import PayAtSFMTA from '@/components/PayAtSFMTA'
+
+export default function ResultsPage() {
+  const sp = useSearchParams()
+  const router = useRouter()
+  const plate = (sp.get('plate') || 'ABC123').toUpperCase()
+  const state = (sp.get('state') || 'CA').toUpperCase()
+  const channel = sp.get('channel') || 'sms'
+  const contact = sp.get('contact') || ''
+
+  return (
+    <main className="px-4 bg-glow-right min-h-screen">
+      <header className="mx-auto max-w-5xl pt-8 sm:pt-12 pb-2 text-center">
+        <h1 className="mt-2 text-4xl/tight sm:text-5xl/tight font-extrabold">You’re all set</h1>
+        <p className="mt-3 text-lg text-gray-600">
+          We’ll {channel === 'email' ? 'email' : 'text'} you when a ticket appears for {state} {plate}, then 5-day and 48-hour reminders.
+        </p>
+        <p className="mt-1 text-sm text-gray-500">Checks run daily; alerts usually within 24 hours.</p>
+      </header>
+
+      <section className="mx-auto max-w-3xl pt-8 pb-16">
+        <div className="card-agency text-center animate-scale-in">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-100 mb-4 mx-auto">
+            <Check className="w-8 h-8 text-emerald-600" />
+          </div>
+          <p className="text-lg text-gray-700">
+            Alerts active to {channel === 'sms' ? 'SMS' : 'Email'}{' '}
+            <span className="font-medium text-gray-900">{decodeURIComponent(contact)}</span>
+          </p>
+
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a href="/manage" className="btn-secondary">Manage alerts</a>
+            <a href="/" className="btn-primary">Add another plate</a>
+          </div>
+
+          <div className="mt-6">
+            <PayAtSFMTA />
+          </div>
+
+          <p className="mt-4 text-sm text-gray-500">
+            Checks run daily; alerts usually within 24 hours.
+          </p>
+        </div>
+      </section>
+    </main>
+  )
+}

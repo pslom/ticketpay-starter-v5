@@ -1,0 +1,73 @@
+'use client'
+
+import Link from 'next/link'
+import { useSearchParams, useRouter } from 'next/navigation'
+import Logo from '@/components/Logo'
+import { Check } from 'lucide-react'
+import TrustRow from '@/components/TrustRow'
+
+export default function ResultsPage() {
+  const sp = useSearchParams()
+  const router = useRouter()
+
+  const plate = (sp.get('plate') || 'ABC123').toUpperCase()
+  const state = (sp.get('state') || 'CA').toUpperCase()
+  const channel = (sp.get('channel') || 'sms').toLowerCase() as 'sms' | 'email'
+  const contact = decodeURIComponent(sp.get('contact') || '')
+
+  return (
+    <div className="min-h-screen bg-neutral-50 [background:radial-gradient(900px_520px_at_88%_-160px,rgba(16,185,129,0.12),transparent_60%)]">
+      {/* Header */}
+      <header className="sticky top-0 z-10 bg-white/60 backdrop-blur border-b border-black/5">
+        <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
+          <Link href="/" className="inline-flex items-center gap-2" aria-label="Go to home">
+            <Logo />
+          </Link>
+          <nav className="flex items-center gap-6 text-sm">
+            <Link href="/manage" className="text-gray-600 hover:text-gray-900">Manage alerts</Link>
+            <Link href="/consent" className="text-gray-600 hover:text-gray-900">Consent</Link>
+          </nav>
+        </div>
+      </header>
+
+      {/* Hero */}
+      <section className="mx-auto max-w-4xl px-4 pt-10 sm:pt-12 text-center">
+        <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900">You’re all set</h1>
+        <p className="mt-3 text-lg text-gray-600">
+          We’ll {channel === 'email' ? 'email' : 'text'} you when a ticket appears for {state} {plate}, then 5-day and 48-hour reminders.
+        </p>
+      </section>
+
+      {/* Card */}
+      <section className="mx-auto max-w-3xl px-4 pt-8 pb-16">
+        <div className="rounded-3xl bg-white p-8 shadow-2xl border border-gray-100 animate-[scaleIn_.4s_cubic-bezier(.34,1.56,.64,1)] text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100">
+            <Check className="h-8 w-8 text-emerald-600" aria-hidden="true" />
+          </div>
+
+          <p className="text-lg text-gray-700">
+            Alerts active to {channel === 'sms' ? 'SMS' : 'Email'}{' '}
+            <span className="font-medium text-gray-900">{contact}</span>
+          </p>
+
+          <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link
+              href="/manage"
+              className="rounded-xl border-2 border-gray-200 px-5 py-3 text-gray-800 hover:bg-gray-50"
+            >
+              Manage alerts
+            </Link>
+            <button
+              onClick={() => router.push('/')}
+              className="rounded-xl bg-emerald-600 px-5 py-3 text-white transition hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-lg"
+            >
+              Add another plate
+            </button>
+          </div>
+
+          <TrustRow className="mt-4 text-gray-500" />
+        </div>
+      </section>
+    </div>
+  )
+}

@@ -6,20 +6,8 @@ const BASE_URL = process.env.BASE_URL || "https://ticketpay.us.com";
 
 const notifier = createNotifier();
 
-// Optional SMS via Twilio
-async function sendSMS(to: string, body: string) {
-  const sid = process.env.TWILIO_ACCOUNT_SID;
-  const token = process.env.TWILIO_AUTH_TOKEN;
-  const from = process.env.TWILIO_FROM || "";
-  if (!sid || !token || !from) return;
-  const auth = Buffer.from(`${sid}:${token}`).toString("base64");
-  const form = new URLSearchParams({ To: to, From: from, Body: body });
-  await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
-    method: "POST",
-    headers: { Authorization: `Basic ${auth}`, "content-type": "application/x-www-form-urlencoded" },
-    body: form,
-  }).catch(() => {});
-}
+import { sendSms } from '@/lib/sms';
+import { confirmSms, plateBadge } from '@/lib/smsTemplates';
 
 export async function POST(req: NextRequest) {
   try {
@@ -46,8 +34,8 @@ export async function POST(req: NextRequest) {
         </div>`;
     await notifier.notify({ channel: "email", to: value, subject: "Confirm TicketPay alerts", text: "Confirm TicketPay alerts", html, listUnsubUrl: `${BASE_URL}/unsubscribe` }).catch(()=>{});
     } else {
-      const body = `TicketPay: Confirm alerts for ${plate} (${state}) in SF:\n${confirmUrl}\nReply STOP to opt out.`;
-      await sendSMS(value, body);
+      const badge = plateBadge(state, plate);
+      await sendSms(value, confirmSms(badge));
     }
 
     return Response.json({ ok: true, confirm_url: confirmUrl });

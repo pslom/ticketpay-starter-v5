@@ -1,54 +1,92 @@
-import TrustChecklist from "@/components/TrustChecklist";
-import { HomeCopy } from "@/lib/copy";
+import Link from 'next/link';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
-export default function HomePage() {
+import PlateForm from "@/components/PlateForm";
+
+function PhonePreview() {
   return (
-    <main className="min-h-[100svh] bg-white">
-      <section className="mx-auto max-w-6xl px-4 py-10 grid grid-cols-1 lg:grid-cols-[1fr_480px] gap-10">
-        {/* Left: hero panel */}
-        <div className="relative rounded-2xl overflow-hidden tp-fade">
-          <div className="absolute inset-0 tp-hero" />
-          <div className="relative p-8 sm:p-10 lg:p-12 text-white">
-            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight">
-              {HomeCopy.heroTitle}
-            </h1>
-            <p className="mt-4 text-lg text-white/90 max-w-md">
-              Instant SF ticket alerts by text or email. We’ll keep watch so you don’t have to.
-            </p>
-            <TrustChecklist />
-            <div className="mt-6 pt-4 border-t border-white/10 text-sm text-white/80">SMS terms · No spam</div>
-          </div>
-        </div>
+    <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
+      {/* Device shell */}
+      <div className="relative mx-auto w-[340px]">
+        <div className="relative rounded-[44px] bg-neutral-900 p-2 shadow-2xl">
+          {/* Screen */}
+          <div className="relative rounded-[36px] overflow-hidden bg-neutral-50">
+            {/* Status area with notch */}
+            <div className="relative h-10 bg-neutral-200/60">
+              <div
+                className="absolute left-1/2 -translate-x-1/2 top-0 w-40 h-6 bg-neutral-900 rounded-b-2xl"
+                aria-hidden
+              />
+            </div>
 
-        {/* Right: form card */}
-        <div className="flex items-start">
-          <div className="tp-surface w-full max-w-md p-6 lg:p-7 tp-fade" style={{animationDelay:"80ms"}}>
-            <form action="/results" className="space-y-4">
-              <div>
-                <label className="tp-label">{HomeCopy.plateLabel}</label>
-                <input name="plate" className="tp-input uppercase" placeholder={HomeCopy.platePlaceholder} required />
+            {/* Message content */}
+            <div className="p-4 space-y-3">
+              <div className="text-center text-[11px] text-neutral-500">TicketPay</div>
+
+              <div className="rounded-2xl bg-white border border-neutral-200 p-3 text-[13px] leading-5 shadow-sm">
+                <div className="font-semibold">New ticket for CA 7ABC123</div>
+                <div className="text-neutral-600">$73 · Expired meter · Mission &amp; 3rd</div>
+                <div className="text-neutral-500 text-[12px]">Posted 12m ago · Due in 21 days</div>
               </div>
-              <div>
-                <label className="tp-label">{HomeCopy.stateLabel}</label>
-                <div className="relative">
-                  <select name="state" className="tp-input appearance-none pr-10">
-                    <option>CA</option>
-                  </select>
-                  <svg className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-tp-green" width="18" height="18" viewBox="0 0 20 20" aria-hidden="true">
-                    <path d="M5 7l5 6 5-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
+
+              <div className="rounded-2xl bg-white border border-neutral-200 p-3 text-[13px] leading-5 shadow-sm">
+                <div>Pay safely at the official portal:</div>
+                <div className="mt-2 inline-flex rounded-full bg-emerald-600 text-white text-[12px] px-3 py-1.5">
+                  Pay at SFMTA
                 </div>
               </div>
-              <button type="submit" className="tp-btn w-full text-[18px] py-3.5">Get ticket alerts</button>
-            </form>
 
-            {/* Microcopy row */}
-            <div className="mt-4 flex items-center justify-between">
-              <div className="tp-micro flex items-center gap-1">
-                <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 10h12v10H6z" fill="#0F5A37"/><path d="M8 10V8a4 4 0 118 0v2" stroke="#0F5A37" strokeWidth="2" fill="none"/></svg>
-                Unsubscribe anytime.
+              <div className="text-[12px] text-neutral-500">SMS · (415) 555-0123</div>
+            </div>
+
+            {/* Home indicator */}
+            <div className="h-10 flex items-center justify-center">
+              <div className="h-1.5 w-28 rounded-full bg-neutral-300" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p className="mt-3 text-center text-xs text-neutral-500">Sample SMS (simulated)</p>
+    </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <main className="min-h-[calc(100vh-56px)]">
+      {/* USE the custom CSS class directly (no /50) */}
+      <section className="bg-aurora-hero">
+        <div className="mx-auto max-w-[1200px] px-4 md:px-6 py-10 md:py-14">
+          <div className="grid md:grid-cols-12 gap-8">
+            {/* Left (60%) */}
+            <div className="md:col-span-7">
+              <div className="bg-white rounded-2xl border border-neutral-200 p-6 md:p-8 shadow-sm">
+                <div className="mb-3">
+                  <span className="inline-flex items-center gap-2 text-xs px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
+                    SF Bay Area • Deadline protection
+                  </span>
+                </div>
+                <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
+                  Never pay a late fee <span className="text-emerald-700">ever again</span>
+                </h1>
+                <p className="mt-5 text-neutral-700">
+                  SF ticket alerts by SMS or email. We remind you before fees hit.
+                </p>
+
+                <div className="mt-6">
+                  <PlateForm />
+                </div>
               </div>
-              <div className="tp-micro">Powered by City of SF Data</div>
+            </div>
+
+            {/* Right (40%) */}
+            <div className="md:col-span-5">
+              <div className="bg-white rounded-2xl border border-neutral-200 p-6 md:p-8 shadow-sm">
+                <h3 className="text-sm font-medium text-neutral-700 mb-4">What it looks like</h3>
+                <PhonePreview />
+              </div>
             </div>
           </div>
         </div>

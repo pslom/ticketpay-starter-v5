@@ -1,0 +1,105 @@
+'use client'
+
+import { useMemo, useState } from 'react'
+import Link from 'next/link'
+import Logo from '@/components/Logo'
+import TrustRow from '@/components/TrustRow'
+import { Search, Pause, Play, Trash2, MessageSquareText, Mail, ChevronLeft, Plus } from 'lucide-react'
+
+type Channel = 'sms' | 'email'
+type AlertRow = {
+  id: string
+  state: string
+  plate: string
+  channel: Channel
+  contact: string
+  active: boolean
+  lastChecked: string
+  nextReminder: string
+}
+
+export default function ManagePage() {
+  // Mock data for MVP. Replace with server data later.
+  const [alerts, setAlerts] = useState<AlertRow[]>([
+    {
+      id: '1',
+      state: 'CA',
+      plate: '7ABC123',
+      channel: 'sms',
+      contact: '(415) 555-0123',
+      active: true,
+      lastChecked: 'Today 7:42 AM',
+      nextReminder: '5-day reminder',
+    },
+    {
+      id: '2',
+      state: 'NV',
+      plate: 'XYZ5678',
+      channel: 'email',
+      contact: 'you@example.com',
+      active: true,
+      lastChecked: 'Yesterday 9:15 PM',
+      nextReminder: '48-hour reminder',
+    },
+  ])
+  const [q, setQ] = useState('')
+
+  const filtered = useMemo(() => {
+    const k = q.trim().toLowerCase()
+    if (!k) return alerts
+    return alerts.filter(a =>
+      a.plate.toLowerCase().includes(k) ||
+      a.contact.toLowerCase().includes(k) ||
+      a.state.toLowerCase().includes(k)
+    )
+  }, [alerts, q])
+
+  const toggleActive = (id: string) => {
+    setAlerts(prev => prev.map(a => (a.id === id ? { ...a, active: !a.active } : a)))
+  }
+
+  const removeAlert = (id: string) => {
+    const row = alerts.find(a => a.id === id)
+    if (!row) return
+    const ok = typeof window !== 'undefined' && window.confirm(
+      `Delete alerts for ${row.state} ${row.plate}? You can add it again later.`
+    )
+    if (ok) setAlerts(prev => prev.filter(a => a.id !== id))
+  }
+
+  return (
+    <div className="min-h-screen bg-neutral-50 text-gray-900 [background:radial-gradient(900px_520px_at_12%_-160px,rgba(16,185,129,0.12),transparent_60%)]">
+      {/* Header */}
+      <header className="sticky top-0 z-10 bg-white/60 backdrop-blur border-b border-black/5">
+        <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
+          <Link href="/" className="inline-flex items-center gap-2" aria-label="Go to home">
+            <Logo />
+          </Link>
+          <nav className="flex items-center gap-6 text-sm">
+            <Link href="/manage" className="text-gray-900 font-medium">Manage alerts</Link>
+            <Link href="/consent" className="text-gray-600 hover:text-gray-900">Consent</Link>
+          </nav>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-6xl px-4 py-8 sm:py-12">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">Manage alerts</h1>
+          <p className="mt-1 text-gray-600">View, pause, or remove your plate alerts.</p>
+        </div>
+
+        {/* Search + Add */}
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search plates or contacts…"
+              className="w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 py-3 outline-none focus:border-emerald-500"
+              aria-label="Search plates or contacts"
+            />
+          </div>
+          <Link
+            href="/"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-white transition hover:-translate-y-0.5 hov

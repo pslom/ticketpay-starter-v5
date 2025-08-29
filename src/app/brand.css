@@ -1,0 +1,35 @@
+
+/* Brand tokens + hero aurora background (no Tailwind required here) */
+:root{
+  --tp-ink: #0B1220;
+  --tp-emerald: #0FA372;
+  --tp-ink-60: color-mix(in oklab, var(--tp-ink) 60%, transparent);
+  --tp-ink-30: color-mix(in oklab, var(--tp-ink) 30%, transparent);
+  /* Aurora stops (match the reference image) */
+  --aurora-peach: #F8B9A5;
+  --aurora-coral: #F3A6D1;
+  --aurora-lilac: #C9B3F5;
+  --aurora-sky:   #B5E1FF;
+  --aurora-mint:  #B7F1E0;
+  --aurora-emerald:#11A97C;
+}
+
+/* Strong, layered gradient background like your reference */
+.bg-aurora-hero{
+  background:
+    radial-gradient(950px 750px at 8% -10%,  color-mix(in srgb, var(--aurora-peach) 55%, transparent) 0%, transparent 60%),
+    radial-gradient(900px 720px at 72% -12%, color-mix(in srgb, var(--aurora-coral) 55%, transparent) 0%, transparent 60%),
+    radial-gradient(880px 720px at 104% 22%, color-mix(in srgb, var(--aurora-lilac) 55%, transparent) 0%, transparent 62%),
+    radial-gradient(900px 720px at -6% 82%,  color-mix(in srgb, var(--aurora-sky) 58%, transparent) 0%, transparent 62%),
+    radial-gradient(1000px 820px at 102% 98%, color-mix(in srgb, var(--aurora-mint) 70%, transparent) 0%, transparent 55%),
+    linear-gradient(180deg, #FFE6DC 0%, #EDEBFF 35%, #DBF6F0 70%, #E3FFE9 100%);
+  background-repeat: no-repeat;
+}
+
+/* Optional utility: stronger vignette for hero cards */
+.bg-aurora-card{
+  background:
+    radial-gradient(680px 560px at 85% 95%,  color-mix(in srgb, var(--aurora-emerald) 28%, transparent) 0%, transparent 62%),
+    radial-gradient(580px 520px at 12% -8%, color-mix(in srgb, var(--aurora-coral) 28%, transparent) 0%, transparent 65%),
+    linear-gradient(180deg, #FFFFFF 0%, #F8FAFF 100%);
+}

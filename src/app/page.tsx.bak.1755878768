@@ -1,0 +1,223 @@
+'use client'
+
+
+import StepperBar from '@/components/StepperBar'
+import TrustRow from '@/components/TrustRow'
+import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
+
+type Step = 'plate' | 'contact'
+type Channel = 'sms' | 'email'
+
+const normalizePhone = (v: string) => v.replace(/[^\d]/g, '')
+const isValidUsPhone = (v: string) => normalizePhone(v).length === 10
+const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())
+const isValidPlate = (v: string) => /^[A-Za-z0-9]{2,8}$/.test(v.replace(/\s/g, ''))
+const formatPhone = (value: string) => {
+  const d = normalizePhone(value)
+  if (d.length <= 3) return d
+  if (d.length <= 6) return `(${d.slice(0,3)}) ${d.slice(3,6)}`
+  return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6,10)}`
+}
+
+export default function HomePage() {
+  const [plate, setPlate] = useState('')
+  const [state, setState] = useState('CA') // CA preselected
+  const [step, setStep] = useState<Step>('plate')
+  const [channel, setChannel] = useState<Channel>('sms') // SMS default
+  const [contact, setContact] = useState('')
+  const [touchedPlate, setTouchedPlate] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
+  const plateRef = useRef<HTMLInputElement>(null)
+  const contactRef = useRef<HTMLInputElement>(null)
+
+  const plateOk = isValidPlate(plate)
+  const contactOk = channel === 'sms' ? isValidUsPhone(contact) : isValidEmail(contact)
+
+  useEffect(() => { if (step === 'plate') plateRef.current?.focus() }, [step])
+
+  const handlePlateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.toUpperCase().replace(/[^A-Za-z0-9]/g, '')
+    if (value.length > 3 && value.length <= 7) value = value.slice(0, 3) + ' ' + value.slice(3)
+    setPlate(value)
+  }
+
+  return (
+    <main className="px-4">
+      {/* Hero */}
+      <section className="mx-auto max-w-5xl pt-8 sm:pt-12 text-center">
+        <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium px-4 py-2 rounded-full">
+          SF Bay Area • Deadline protection
+        </div>
+        <h1 className="mt-4 text-4xl sm:text-5xl font-extrabold">
+          Never pay a late fee <span className="block text-emerald-600">ever again</span>
+        </h1>
+        <p className="mt-3 text-lg text-gray-600">
+          SF ticket alerts by SMS or email. We remind you before fees hit.
+        </p>
+        <p className="mt-2 text-sm text-gray-500">2-step setup. You’ll confirm your contact next.</p>
+      </section>
+
+      {/* Card */}
+      <div className="mx-auto max-w-xl px-4 py-6">
+        <div className="card-agency animate-scale-in">
+          <StepperBar step={step === 'plate' ? 1 : 2} />
+
+          {step === 'plate' ? (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
+                  <div className="relative">
+                    <select
+                      className="select-field pr-10"
+                      value={state}
+                      onChange={(e) => setState(e.target.value)}
+                      aria-label="Plate state"
+                    >
+                      <option value="CA">CA</option>
+                      <option value="NV">NV</option>
+                      <option value="AZ">AZ</option>
+                      <option value="OR">OR</option>
+                      <option value="WA">WA</option>
+                      <option value="CO">CO</option>
+                      <option value="UT">UT</option>
+                      <option value="ID">ID</option>
+                      <option value="MT">MT</option>
+                      <option value="NM">NM</option>
+                      <option value="TX">TX</option>
+                      <option value="NY">NY</option>
+                      <option value="FL">FL</option>
+                      {/* ...add all US states as needed... */}
+                    </select>
+                    <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">▾</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">License plate</label>
+                  <input
+                    className="input-field"
+                    maxLength={8}
+                    placeholder="7abc123"
+                    value={plate}
+                    onChange={handlePlateChange}
+                    onKeyDown={(e) => e.key === 'Enter' && plateOk && setStep('contact')}
+                    aria-describedby="plate-help"
+                  />
+                </div>
+              </div>
+
+              <p id="plate-help" className="mt-2 text-xs text-gray-500" aria-live="polite">
+                US plates welcome. Alerts apply to <span className="font-medium">SFMTA</span> (San Francisco) tickets only.
+              </p>
+
+              <button
+                onClick={() => plateOk && setStep('contact')}
+                disabled={!plateOk}
+                className={plateOk ? 'btn-primary w-full mt-6' : 'w-full mt-6 rounded-2xl bg-gray-300 text-white py-4 cursor-not-allowed'}
+              >
+                Next
+              </button>
+
+              <TrustRow />
+            </>
+          ) : (
+            <>
+              {/* your channel tabs & contact field remain — keep spacing consistent */}
+              <div className="flex items-center justify-between mt-4">
+                <p className="text-sm text-gray-500">
+                  Plate <span className="font-mono text-gray-900">{state} {plate.replace(/\s/g,'').toUpperCase()}</span>
+                </p>
+                <div role="tablist" aria-label="Choose alert channel" className="inline-flex rounded-full bg-gray-100 p-1">
+                  <button
+                    role="tab" aria-selected={channel==='sms'}
+                    onClick={() => { setChannel('sms'); contactRef.current?.focus() }}
+                    className={`px-3 py-1.5 text-sm rounded-full border ${channel==='sms' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-gray-900 border-gray-300 hover:bg-gray-50'}`}
+                  >
+                    SMS
+                  </button>
+                  <button
+                    role="tab" aria-selected={channel==='email'}
+                    onClick={() => { setChannel('email'); contactRef.current?.focus() }}
+                    className={`ml-2 px-3 py-1.5 text-sm rounded-full border ${channel==='email' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-gray-900 border-gray-300 hover:bg-gray-50'}`}
+                  >
+                    Email
+                  </button>
+                </div>
+              </div>
+
+              <label htmlFor="contact" className="block text-sm font-medium text-gray-700 mt-4">
+                {channel === 'sms' ? 'Mobile number' : 'Email address'}
+              </label>
+              <input
+                id="contact"
+                ref={contactRef}
+                type={channel === 'sms' ? 'tel' : 'email'}
+                inputMode={channel === 'sms' ? 'numeric' : 'email'}
+                autoComplete={channel === 'sms' ? 'tel' : 'email'}
+                value={contact}
+                onChange={(e) => setContact(channel === 'sms' ? formatPhone(e.target.value) : e.target.value)}
+                placeholder={channel === 'sms' ? '(415) 555-0123' : 'you@example.com'}
+                aria-describedby="contact-help"
+                className="input-field mt-2"
+              />
+              <p id="contact-help" aria-live="polite" className="mt-1 text-xs text-gray-500">
+                {channel === 'sms'
+                  ? 'Message & data rates may apply. Text STOP to cancel, HELP for help.'
+                  : <>We’ll send a confirmation first. <button className="underline decoration-dotted" onClick={() => setChannel('sms')}>Want SMS too? It’s faster.</button></>}
+              </p>
+
+              {/* on mobile, make CTA sticky at bottom for better reach */}
+              <div className="sm:static fixed left-0 right-0 bottom-0 sm:mt-6 sm:pb-0 pb-6 px-4 sm:px-0 bg-white/70 sm:bg-transparent backdrop-blur-sm sm:backdrop-blur-0">
+                <button
+                  onClick={async () => {
+                    if (!contactOk) return
+                    setIsLoading(true)
+                    setTimeout(() => {
+                      const params = new URLSearchParams({
+                        plate: plate.replace(/\s/g,'').toUpperCase(),
+                        state,
+                        channel,
+                        contact: contact
+                      })
+                      router.push(`/results?${params.toString()}`)
+                    }, 350)
+                  }}
+                  disabled={!contactOk || isLoading}
+                  className={contactOk && !isLoading ? 'btn-primary w-full' : 'w-full rounded-2xl bg-gray-300 text-white py-4 cursor-not-allowed'}
+                >
+                  {channel === 'sms' ? 'Start SMS alerts' : 'Start email alerts'}
+                </button>
+              </div>
+
+              <button onClick={() => setStep('plate')} className="mt-3 w-full text-sm text-gray-600 hover:text-gray-900">
+                Back
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Optional “How it works” using <details> to keep page light */}
+        <details className="how">
+          <summary>How it works</summary>
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="card">
+              <h4 className="font-semibold mb-1">Notify</h4>
+              <p className="text-sm text-gray-600">We check daily and alert you when a ticket appears.</p>
+            </div>
+            <div className="card">
+              <h4 className="font-semibold mb-1">Remind</h4>
+              <p className="text-sm text-gray-600">5-day and 48-hour reminders before late fees.</p>
+            </div>
+            <div className="card">
+              <h4 className="font-semibold mb-1">You pay</h4>
+              <p className="text-sm text-gray-600">At the official SFMTA portal.</p>
+            </div>
+          </div>
+        </details>
+      </div>
+    </main>
+  )
+}

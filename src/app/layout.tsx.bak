@@ -1,0 +1,38 @@
+import type { Metadata, Viewport } from 'next'
+import { Manrope } from 'next/font/google'
+import './globals.css'
+import Footer from '@/components/Footer'
+
+const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope' })
+
+export const metadata: Metadata = {
+  title: 'TicketPay',
+  description: 'Get alerted before late fees hit.',
+  openGraph: {
+    title: 'TicketPay',
+    description: 'Get alerted before late fees hit.',
+    url: 'https://www.ticketpay.us.com',
+    siteName: 'TicketPay',
+    images: [{ url: '/og.png', width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'TicketPay',
+    description: 'Get alerted before late fees hit.',
+    images: ['/og.png'],
+  },
+  icons: { icon: '/favicon.ico', apple: '/apple-touch-icon.png' },
+}
+
+export const viewport: Viewport = { themeColor: '#10b981' }
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en" className={manrope.variable}>
+      <body className="min-h-dvh bg-neutral-50 text-gray-900 antialiased bg-glow-top">
+        {children}
+        <Footer />
+      </body>
+    </html>
+  )
+}

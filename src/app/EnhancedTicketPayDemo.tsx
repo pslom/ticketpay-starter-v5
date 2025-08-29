@@ -1,199 +1,134 @@
-"use client";
+'use client';
+import { subscribeOnce } from '@/lib/subscribe';
+import PhoneInputPretty from '@/components/PhoneInputPretty';
+import StateDropdown from '@/components/StateDropdown';
 import React, { useState } from 'react';
-import { ChevronRight, Check, AlertCircle, Clock, Mail, MessageSquare } from 'lucide-react';
 
-// Unified tokens and constants
-const TP_GREEN = 'from-[#0F5A37] to-[#0B472C]';
-const TP_GREEN_SOLID = 'bg-[#0F5A37]';
-const TP_GREEN_HOVER = 'hover:bg-[#106240]';
-const TP_SURFACE = 'bg-[#F7F5F2]';
-const TP_SHADOW = 'shadow-[0_12px_28px_rgba(16,30,25,0.14)]';
-const TP_RADIUS = 'rounded-2xl';
-
-export default function EnhancedTicketPay() {
+export default function EnhancedTicketPayDemo() {
   const [plate, setPlate] = useState('');
-  const [state, setState] = useState('CA');
-  const [isLoading, setIsLoading] = useState(false);
-  const [showResults, setShowResults] = useState(false);
-  const [channel, setChannel] = useState<'email' | 'sms'>('email');
+  const [stateVal, setStateVal] = useState('CA');
+  const [channel, setChannel] = useState<'sms' | 'email'>('sms');
   const [contactValue, setContactValue] = useState('');
   const [plateError, setPlateError] = useState('');
 
-  const handlePlateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  function handlePlateChange(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
     setPlate(value);
-    setPlateError('');
-    if (value && !/^[A-Z0-9]{1,8}$/.test(value)) setPlateError('Use letters and numbers only');
-  };
-
-  const handleSearch = async () => {
-    if (!plate || plateError) return;
-    setIsLoading(true);
-    await new Promise(r => setTimeout(r, 700));
-    setIsLoading(false);
-    setShowResults(true);
-  };
-
-  const handleSubscribe = async () => {
-    if (!contactValue) return;
-    setIsLoading(true);
-    await new Promise(r => setTimeout(r, 600));
-    setIsLoading(false);
-    alert("You're set. We’ll alert you immediately when a ticket posts.");
-  };
-
-  const states = ['CA', 'NY', 'TX', 'FL', 'IL', 'PA', 'OH', 'GA', 'NC', 'MI'];
-
-  if (showResults) {
-    return (
-      <ResultsPage
-        plate={plate}
-        state={state}
-        channel={channel}
-        setChannel={setChannel}
-        contactValue={contactValue}
-        setContactValue={setContactValue}
-        handleSubscribe={handleSubscribe}
-        isLoading={isLoading}
-        onBack={() => setShowResults(false)}
-      />
-    );
+    if (value.length < 2 || value.length > 8) setPlateError('Enter 2–8 characters');
+    else setPlateError('');
   }
 
+  async function handleSearch() { return; }
+  async function handleSubscribe(){
+  setDup(false);
+  if(!plate || plateError) return;
+  if(!contactValue) return;
+  const resp = await subscribeOnce({ state: stateVal, plate, channel, contact: contactValue, alsoEmail: wantEmailToo, email: secondaryEmail });
+  if(!resp.ok){ console.warn('subscribe failed', resp); return; }
+  if(resp.duplicate){ setDup(true); return; }
+  // success path continues as-is
+}
+
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      {/* Header */}
-      <header className="sticky top-0 z-10 border-b border-black/5 bg-white/80 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            <div className={`grid h-8 w-8 place-items-center rounded-lg ${TP_GREEN_SOLID}`}>
-              <span className="text-sm font-bold text-white">TP</span>
+    <div className="min-h-screen bg-aurora p-6 md:p-10">
+      <div className="mx-auto max-w-[960px] space-y-8">
+        <div className="card p-8 space-y-6">
+          <h1 className="text-2xl font-bold">TicketPay Demo</h1>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm text-neutral-600">State</label>
+<StateDropdown value={stateVal} onChange={setStateVal} />
             </div>
-            <span className="font-semibold text-neutral-900">TicketPay</span>
+            <div className="flex flex-col gap-2 md:col-span-2">
+              <label className="text-sm text-neutral-600">Plate</label>
+              <input
+                className="input px-3"
+                value={plate}
+                onChange={handlePlateChange}
+              />
+              {plateError ? <p className="text-xs text-red-600">{plateError}</p> : null}
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-xs text-neutral-600">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-            <span>Powered by City of SF Data</span>
+
+          <div className="flex flex-col md:flex-row md:items-center gap-3">
+            <div className="inline-flex rounded-xl p-1 bg-neutral-100">
+              <button
+                className={`h-10 px-3 rounded-lg ${channel==='sms'?'bg-emerald-100 text-emerald-800':'text-neutral-800'}`}
+                onClick={()=>setChannel('sms')}
+              >
+                SMS
+              </button>
+              <button
+                className={`h-10 px-3 rounded-lg ${channel==='email'?'bg-emerald-100 text-emerald-800':'text-neutral-800'}`}
+                onClick={()=>setChannel('email')}
+              >
+                Email
+              </button>
+            </div>
+<label className="ml-3 inline-flex items-center gap-2 text-sm">
+  <input type="checkbox" checked={wantEmailToo} onChange={(e)=>setWantEmailToo(e.target.checked)} />
+  <span>Also send to email</span>
+</label>
+{wantEmailToo && channel==='sms' ? (
+  <input className="input px-3 mt-2 max-w-sm" placeholder="name@domain.com" value={secondaryEmail} onChange={(e)=>setSecondaryEmail(e.target.value)} />
+) : null}
+
+
+            {channel==='sms' ? (
+  <PhoneInputPretty value={contactValue} onChange={setContactValue} />
+) : (
+  <input className="input px-3 flex-1 max-w-sm" placeholder="name@domain.com" value={contactValue} onChange={(e)=>setContactValue(e.target.value)} />
+)}
+<div className="flex gap-3">
+              <button className="btn-primary" onClick={handleSearch}>Check</button>
+              <button className="btn-primary" onClick={handleSubscribe}>Subscribe</button>
+            </div>
           </div>
         </div>
-      </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-10 md:py-16">
-        {/* Split hero: left message, right form */}
-        <section className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_480px]">
-          {/* Left — civic authority + checklist */}
-          <div className={`relative overflow-hidden ${TP_RADIUS} ${TP_SHADOW}`}>
-            <div className={`absolute inset-0 bg-gradient-to-br ${TP_GREEN}`} />
-            <div className="relative p-8 text-white sm:p-10 lg:p-12">
-              <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
-                Never miss a ticket deadline.
-              </h1>
-              <p className="mt-4 max-w-md text-lg text-white/90">
-                Instant SF ticket alerts by text or email. We’ll keep watch so you don’t have to.
-              </p>
-              <TrustChecklist />
-              <div className="mt-6 border-t border-white/10 pt-4 text-sm text-white/80">
-                SMS terms · No spam
+        <div className="card p-6">
+          <div className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-4">
+            <div className="flex items-start gap-3">
+              <div className="grid h-10 w-10 place-items-center rounded-full bg-amber-500">
+                <AlertCircle className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="mb-1 font-semibold text-neutral-900">New ticket: 7ABC123</p>
+                <p className="mb-2 text-sm text-neutral-800">$73 • Expired meter • Mission &amp; 3rd</p>
+                <div className="flex items-center gap-4 text-xs text-neutral-700">
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    Posted 12 min ago
+                  </span>
+                  <span className="font-medium text-amber-700">Due in 21 days</span>
+                </div>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Right — form on warm surface */}
-          <div className="flex items-start">
-            <div className={`${TP_SURFACE} ${TP_RADIUS} ${TP_SHADOW} w-full max-w-md p-6 sm:p-7`}>
-              {/* Plate input */}
-              <div className="space-y-4">
-                <div>
-                  <label className="mb-1 block text-[15px] font-medium text-neutral-800">
-                    License plate
-                  </label>
-                  <input
-                    type="text"
-                    value={plate}
-                    onChange={handlePlateChange}
-                    placeholder="7ABC123"
-                    maxLength={8}
-                    className="w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 font-mono text-lg uppercase outline-none ring-0 transition focus:ring-2 focus:ring-emerald-300"
-                    autoCapitalize="characters"
-                    autoComplete="off"
-                  />
-                  {plateError && (
-                    <p className="mt-1 flex items-center gap-1 text-xs text-red-600">
-                      <AlertCircle className="h-3 w-3" />
-                      {plateError}
-                    </p>
-                  )}
-                </div>
-
-                {/* State selector (touch-friendly) */}
-                <div>
-                  <label className="mb-1 block text-[15px] font-medium text-neutral-800">
-                    State
-                  </label>
-                  <div className="grid grid-cols-5 gap-2">
-                    {states.map(s => (
-                      <button
-                        type="button"
-                        key={s}
-                        onClick={() => setState(s)}
-                        className={[
-                          'rounded-xl px-3 py-2 text-sm font-medium transition',
-                          state === s
-                            ? `${TP_GREEN_SOLID} text-white shadow-md`
-                            : 'bg-neutral-100 text-neutral-800 hover:bg-neutral-200',
-                        ].join(' ')}
-                      >
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* CTA */}
-              <button
-                onClick={handleSearch}
-                disabled={!plate || !!plateError || isLoading}
-                className={[
-                  'mt-6 w-full rounded-xl px-6 py-4 font-semibold text-white transition',
-                  (!plate || !!plateError || isLoading)
-                    ? 'cursor-not-allowed bg-neutral-300'
-                    : `${TP_GREEN_SOLID} ${TP_GREEN_HOVER} ${TP_SHADOW}`,
-                ].join(' ')}
-              >
-                {isLoading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Spinner /> Checking…
-                  </span>
-                ) : (
-                  <span className="flex items-center justify-center gap-2">
-                    Get ticket alerts <ChevronRight className="h-5 w-5" />
-                  </span>
-                )}
-              </button>
-
-              {/* Trust microcopy row */}
-              <div className="mt-4 flex items-center justify-between">
-                <div className="tp-micro flex items-center gap-1 text-[13px] text-neutral-600">
-                  <LockIcon className="h-3.5 w-3.5 text-[#0F5A37]" />
-                  Unsubscribe anytime.
-                </div>
-                <div className="tp-micro text-[13px] text-neutral-600">Powered by City of SF Data</div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Inline value preview */}
-        <section className="mx-auto mt-12 max-w-lg">
-          <p className="mb-3 text-center text-sm font-medium text-neutral-700">Here’s what you’ll get:</p>
-          <ExampleAlert />
-          <p className="mt-3 text-center text-sm text-neutral-600">You’d get this instantly by email or text.</p>
-        </section>
-      </main>
+      </div>
     </div>
   );
 }
 
-// ... ResultsPage, TrustChecklist, Toggle, BenefitCard, ExampleAlert, Spinner, ShieldIcon, LockIcon, DotIcon ...
-// (Paste the rest of your code here, unchanged)
+function AlertCircle(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" {...props}>
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+      <path d="M12 8v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="12" cy="16" r="1" fill="currentColor" />
+    </svg>
+  );
+}
+
+function Clock(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" {...props}>
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+      <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}

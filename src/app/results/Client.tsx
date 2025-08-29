@@ -63,7 +63,7 @@ export default function ResultsClient() {
           </div>
         </div>
 
-  {/* Stepper */}
+  {/* Stepper */}                             
   <Stepper step={2} />
       </section>
     </main>

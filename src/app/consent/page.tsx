@@ -1,25 +1,36 @@
-export const dynamic = "force-static";
-import { ConsentCopy } from "@/lib/copy";
+export const metadata = { title: 'Consent — TicketPay' }
 
 export default function ConsentPage() {
-  return (
-    <main className="mx-auto max-w-3xl px-4 py-10">
-      <h1 className="text-3xl font-bold">{ConsentCopy.title}</h1>
-      <p className="mt-2 text-neutral-700">
-        By entering your phone number or email on TicketPay, you agree to receive notifications
-        about new parking tickets issued in San Francisco, CA for the plates you follow.
-      </p>
+	return (
+		<main className="min-h-[60vh] px-4 py-12">
+			<div className="mx-auto max-w-3xl rounded-3xl bg-white p-8 shadow-2xl border border-gray-100">
+				<h1 className="text-3xl font-extrabold text-gray-900">SMS Consent & Privacy</h1>
 
-      <div className="mt-6 rounded-2xl border border-black/10 bg-white p-6 shadow-card">
-        <ul className="list-disc pl-6 space-y-2 text-neutral-800">
-          {ConsentCopy.bullets.map((b, i) => <li key={i}>{b}</li>)}
-        </ul>
-        <p className="mt-6 text-sm text-neutral-700">{ConsentCopy.footer}</p>
-      </div>
+				<p className="mt-4 text-gray-700">
+					We don’t pay tickets or collect payment info — we notify you so you can pay on time.
+				</p>
 
-      <footer className="mt-8 text-sm text-neutral-600">
-        © TicketPay • San Francisco, CA
-      </footer>
-    </main>
-  );
+				<section className="mt-6">
+					<h2 className="text-lg font-semibold text-gray-900">SMS alerts</h2>
+					<ul className="mt-3 space-y-2 text-gray-700">
+						<li>• Message frequency: new-ticket alerts and deadline reminders only.</li>
+						<li>• Message &amp; data rates may apply.</li>
+						<li>• Reply <strong>STOP</strong> to cancel, <strong>HELP</strong> for help.</li>
+					</ul>
+				</section>
+
+				<section className="mt-6">
+					<h2 className="text-lg font-semibold text-gray-900">Privacy</h2>
+					<ul className="mt-3 space-y-2 text-gray-700">
+						<li>• We only use your contact for alerts you requested.</li>
+						<li>• Data is encrypted in transit and can be deleted on request.</li>
+					</ul>
+				</section>
+
+				<p className="mt-8 text-sm text-gray-500">
+					Questions? Email <a href="mailto:support@ticketpay.us" className="text-emerald-700 font-medium">support@ticketpay.us</a>.
+				</p>
+			</div>
+		</main>
+	)
 }

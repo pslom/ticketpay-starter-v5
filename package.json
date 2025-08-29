@@ -13,7 +13,9 @@
     "smoke:local": "bash ./scripts/smoke-test.sh",
     "smoke:remote": "bash ./scripts/smoke.sh",
     "pg:smoke": "node ./scripts/pg-smoke.js",
-    "alerts:enqueue:test": "node ./scripts/alerts-enqueue-test.js"
+    "alerts:enqueue:test": "node ./scripts/alerts-enqueue-test.js",
+    "type-check": "tsc --noEmit",
+    "prebuild": "node -r dotenv/config scripts/check-env.ts dotenv_config_path=.env.local"
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.5",
@@ -22,6 +24,10 @@
     "@upstash/ratelimit": "^2.0.6",
     "@upstash/redis": "^1.35.3",
     "canvas-confetti": "^1.9.3",
+    "clsx": "^2.1.1",
+    "jose": "^6.0.12",
+    "lucide-react": "^0.540.0",
+    "nanoid": "^5.1.5",
     "next": "15.4.6",
     "pg": "^8.16.3",
     "react": "19.1.0",
@@ -34,7 +40,7 @@
     "@eslint/eslintrc": "^3",
     "@eslint/js": "^9.33.0",
     "@tailwindcss/postcss": "^4.1.12",
-    "@types/node": "^20",
+    "@types/node": "^20.19.11",
     "@types/pg": "^8.15.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -44,7 +50,7 @@
     "eslint-config-next": "15.4.6",
     "eslint-plugin-next": "^0.0.0",
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.12",
+    "tailwindcss": "^3.4.17",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.39.1"
   }

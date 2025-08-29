@@ -1,12 +1,12 @@
 export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { getPool } from "@/lib/pg";
-import { getIncomingToken, getExpectedToken } from "../_util/token";
 
 export async function GET(req: Request) {
-  const token = getIncomingToken(req);
-  const expected = getExpectedToken();
-  if (!expected || token !== expected) {
+  const url = new URL(req.url);
+  const token = url.searchParams.get("token") || "";
+  if (!process.env.DEBUG_TOKEN || token !== process.env.DEBUG_TOKEN) {
     return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   }
   try {

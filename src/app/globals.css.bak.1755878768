@@ -1,0 +1,178 @@
+/* === Background FX === */
+.fx-grid{
+  background-image:
+    linear-gradient(to right, rgba(15,23,42,0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15,23,42,0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+  will-change: background-position;
+}
+
+/* soft emerald aurora “beams” */
+.fx-aurora{
+  background:
+    radial-gradient(180px 280px at 15% 20%, rgba(16,185,129,0.18), transparent 60%),
+    radial-gradient(240px 340px at 85% 25%, rgba(5,150,105,0.16), transparent 65%),
+    radial-gradient(280px 220px at 50% 85%, rgba(16,185,129,0.14), transparent 60%);
+  filter: blur(40px) saturate(110%);
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* vignette to ground content (very subtle) */
+.fx-vignette{
+  background: radial-gradient(ellipse at 50% 20%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.06) 100%);
+  pointer-events: none;
+}
+
+/* Animations */
+@keyframes gridPan {
+  0%   { background-position: 0px 0px, 0px 0px; }
+  100% { background-position: 56px 28px, 28px 56px; }
+}
+.animate-grid-pan{
+  animation: gridPan 40s linear infinite;
+}
+
+@keyframes auroraMove {
+  0%   { transform: rotate(0deg) translate3d(0,0,0) scale(1.05); }
+  50%  { transform: rotate(8deg) translate3d(2%, -1.5%, 0) scale(1.08); }
+  100% { transform: rotate(16deg) translate3d(-1%, 1%, 0) scale(1.05); }
+}
+.animate-aurora{
+  animation: auroraMove 60s ease-in-out infinite alternate;
+}
+
+/* Respect reduce-motion */
+@media (prefers-reduced-motion: reduce){
+  .animate-grid-pan,
+  .animate-aurora{ animation: none !important; }
+}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ----- Brand surface helpers ----- */
+@layer utilities {
+  .bg-glow-top {
+    background:
+      radial-gradient(900px 520px at 50% -160px, rgba(16,185,129,0.12), transparent 60%),
+      #f7f7f7;
+  }
+  .bg-glow-left {
+    background:
+      radial-gradient(700px 480px at -120px -80px, rgba(16,185,129,0.12), transparent 60%),
+      #f7f7f7;
+  }
+  .bg-glow-right {
+    background:
+      radial-gradient(700px 480px at calc(100% + 120px) -80px, rgba(16,185,129,0.12), transparent 60%),
+      #f7f7f7;
+  }
+
+  /* Faint grid watermark, AA-safe */
+  .bg-grid {
+    --grid-color: rgba(0,0,0,0.04);
+    background-image:
+      linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
+    background-size: 24px 24px, 24px 24px;
+    background-position: -1px -1px, -1px -1px;
+  }
+
+  .card-agency {
+    @apply rounded-3xl bg-white p-8 shadow-2xl border border-gray-100;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-2xl px-6 py-4 font-semibold text-white
+           transition will-change-transform focus:outline-none focus:ring-2 focus:ring-emerald-400;
+    background: linear-gradient(90deg, #059669, #10b981);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 18px 35px -20px rgba(16,185,129,0.65); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { @apply bg-gray-300 cursor-not-allowed shadow-none; background: #d1d5db; }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-xl border-2 border-gray-200 px-5 py-3
+           text-gray-800 hover:bg-gray-50 transition focus:outline-none focus:ring-2 focus:ring-emerald-400;
+  }
+}
+
+/* Improve focus rings universally */
+:where(button, a, input, select, textarea):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(16,185,129,0.55) !important;
+  border-radius: 14px;
+}
+
+/* === Design tokens & utilities (add to end of globals.css) === */
+
+@layer components {
+  .card {
+    @apply rounded-3xl bg-white p-8 shadow-2xl border border-gray-100;
+  }
+  .card-agency {
+    @apply rounded-[28px] bg-white p-8 border border-gray-100 shadow-[0_30px_60px_-20px_rgba(16,24,40,0.16)];
+  }
+  .input-field {
+    @apply h-16 w-full px-5 text-[20px] font-mono uppercase bg-gray-50
+           border-2 border-gray-200 rounded-2xl outline-none
+           focus:border-emerald-500 focus:bg-white;
+  }
+  .select-field {
+    @apply h-16 w-full px-5 bg-gray-50 border-2 border-gray-200 rounded-2xl
+           outline-none focus:border-emerald-500 appearance-none;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl
+           bg-emerald-600 text-white px-6 py-4 font-semibold
+           transition will-change-transform
+           hover:-translate-y-0.5 hover:shadow-[0_20px_40px_-20px_rgba(16,185,129,0.45)]
+           focus:outline-none focus:ring-2 focus:ring-emerald-400;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl
+           border-2 border-gray-200 text-gray-800 px-5 py-3
+           hover:bg-gray-50;
+  }
+  .progress {
+    @apply h-1.5 w-full rounded-full bg-gray-100 overflow-hidden;
+  }
+  .progress-bar {
+    @apply h-1.5 rounded-full bg-emerald-600 transition-[width] duration-300 ease-out;
+  }
+  .trust-row {
+    @apply mt-4 flex items-center justify-center gap-8 text-sm text-gray-500;
+  }
+  .icon-muted {
+    @apply w-4 h-4 text-gray-500;
+  }
+
+  /* details/summary “How it works” */
+  details.how {
+    @apply mt-6 mx-auto max-w-3xl;
+  }
+  details.how > summary {
+    @apply cursor-pointer select-none text-gray-700 text-sm inline-flex items-center gap-2;
+  }
+  details.how[open] > summary {
+    @apply text-gray-900;
+  }
+
+  /* Subtle grid watermark (keeps your vibe, a bit sharper) */
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, rgba(15, 23, 42, 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(15, 23, 42, 0.06) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  /* Card mount motion */
+  .animate-scale-in {
+    animation: scaleIn .15s cubic-bezier(.22, 1, .36, 1);
+  }
+}
+@keyframes scaleIn {
+  from { transform: scale(.98); opacity: 0 }
+  to   { transform: scale(1);   opacity: 1 }
+}
