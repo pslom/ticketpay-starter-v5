@@ -1,3 +1,42 @@
+@keyframes animate-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-in { animation: animate-in 0.3s ease-out; }
+.animate-bounce { animation: bounce 1s infinite; }
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes animate-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation: animate-in 0.3s ease-out;
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-in-from-top {
+  animation: slide-in 0.3s ease-out;
+}
 @import "tailwindcss";
 @source "./src";
 
@@ -119,4 +158,33 @@ a{color:inherit}
 .confetti i {
   position:absolute; width:8px; height:12px; border-radius:2px; opacity:.9;
   animation: confetti-fall 800ms ease-out forwards;
+}
+
+/* TicketPay Custom Styles */
+.tp-hero {
+  @apply min-h-screen bg-gradient-to-br from-white via-emerald-50 to-emerald-100;
+}
+
+.tp-card {
+  @apply bg-white rounded-2xl shadow-xl border border-gray-100;
+}
+
+.tp-badge {
+  @apply inline-flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-1.5 text-sm font-medium text-emerald-700;
+}
+
+.tp-input {
+  @apply w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-900 transition-all focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20;
+}
+
+.tp-cta {
+  @apply w-full rounded-xl bg-emerald-600 px-6 py-3 font-medium text-white transition-all hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+.tp-progress {
+  @apply h-1 w-full overflow-hidden rounded-full bg-gray-100;
+}
+
+.tp-progress span {
+  @apply block h-full bg-gradient-to-r from-emerald-500 to-emerald-600 transition-all duration-500;
 }

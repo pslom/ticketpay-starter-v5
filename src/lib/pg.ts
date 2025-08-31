@@ -22,6 +22,10 @@ export function getPool(): Pool {
       : { rejectUnauthorized: true },
   });
 
+  _pool.on('error', (err) => {
+    console.error('Unexpected error on idle client', err);
+  });
+
   return _pool;
 }
 
@@ -30,4 +34,20 @@ export async function withClient<T>(fn: (c: PoolClient) => Promise<T>): Promise<
   const client = await pool.connect();
   try { return await fn(client); }
   finally { client.release(); }
+}
+
+export async function query(text: string, params?: any[]) {
+  const pool = getPool();
+  const start = Date.now();
+  try {
+    const res = await pool.query(text, params);
+    const duration = Date.now() - start;
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Query executed', { duration, rows: res.rowCount });
+    }
+    return res;
+  } catch (error) {
+    console.error('Database query error:', error);
+    throw error;
+  }
 }
