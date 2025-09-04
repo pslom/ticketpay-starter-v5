@@ -1,3 +1,6 @@
 {
-  "crons": []
+  "crons": [
+  { "path": "/api/cron/fetch-sfmta", "schedule": "0 6 * * *" },
+  { "path": "/api/cron/send-reminders", "schedule": "0 * * * *" }
+  ]
 }

@@ -1,4 +1,4 @@
-
+// deleted
 export default {
   plugins: {
     '@tailwindcss/postcss': {},

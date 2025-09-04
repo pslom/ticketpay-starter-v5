@@ -35,6 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </header>
         <main id="main">{children}</main>
+        <Toaster />
         <footer className="mx-auto max-w-4xl px-4 py-10 text-sm text-neutral-600">
           <div className="flex items-center justify-between">
             <p>© TicketPay • Made in San Francisco</p>

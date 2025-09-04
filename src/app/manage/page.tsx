@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { formatUSD } from "@/lib/format";
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
@@ -297,7 +298,7 @@ export default function ManagePage() {
                                 {activeTickets.length} active {activeTickets.length === 1 ? 'ticket' : 'tickets'}
                               </span>
                               <span className="text-sm">
-                                ${activeTickets.reduce((sum, t) => sum + (t.amount_cents / 100), 0).toFixed(2)} total
+                                {formatUSD(activeTickets.reduce((sum, t) => sum + (t.amount_cents / 100), 0))} total
                               </span>
                             </div>
                             <a
